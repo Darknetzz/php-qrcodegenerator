@@ -65,16 +65,15 @@ function is_access_configured(array $config): bool {
 function require_updates_access(array $config): void {
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
     $allowlist = trim($config['update_ip_allowlist'] ?? '');
-    if ($allowlist !== '') {
-        $allowed = ip_in_list($remote, $allowlist);
-        if (!$allowed) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Access denied (IP not allowed)'], JSON_UNESCAPED_SLASHES);
-            exit;
-        }
+    $ipAllowed = $allowlist === '' || ip_in_list($remote, $allowlist);
+    if ($allowlist !== '' && !$ipAllowed) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Access denied (IP not allowed)'], JSON_UNESCAPED_SLASHES);
+        exit;
     }
     $useLogin = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
-    if ($useLogin) {
+    $requireLoginAlways = !empty($config['update_require_login_always']) && $config['update_require_login_always'] !== '0';
+    if ($useLogin && ($requireLoginAlways || !$ipAllowed)) {
         $user = trim($config['update_auth_user'] ?? '');
         $pass = trim($config['update_auth_password'] ?? '');
         if ($pass === '' && getenv('UPDATE_AUTH_PASSWORD') !== false) {
@@ -145,10 +144,12 @@ if ($action === 'save-initial-config') {
     if ($allowlist === '' && (!$useBasic || $authUser === '' || $authPass === '')) {
         json_exit(['error' => 'Set at least an IP allowlist or enable login with username and password'], 400);
     }
+    $requireLoginAlways = !empty($_POST['update_require_login_always']);
     $updates = [
         'update_repo' => trim($config['update_repo'] ?? ''),
         'update_ip_allowlist' => $allowlist,
         'update_use_basic_auth' => $useBasic ? '1' : '0',
+        'update_require_login_always' => $requireLoginAlways ? '1' : '0',
         'update_auth_user' => $authUser,
         'update_auth_password' => $authPass,
         'update_secret' => trim($config['update_secret'] ?? ''),

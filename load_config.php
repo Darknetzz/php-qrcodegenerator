@@ -45,6 +45,7 @@ function get_default_config(): array {
         'update_repo' => 'Darknetzz/php-qrcodegenerator',
         'update_ip_allowlist' => '',
         'update_use_basic_auth' => '0',
+        'update_require_login_always' => '0',
         'update_auth_user' => '',
         'update_auth_password' => '',
         'update_secret' => '',

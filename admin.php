@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'update_repo' => trim($_POST['update_repo'] ?? ''),
         'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
         'update_use_basic_auth' => !empty($_POST['update_use_basic_auth']) ? '1' : '0',
+        'update_require_login_always' => !empty($_POST['update_require_login_always']) ? '1' : '0',
         'update_auth_user' => trim($_POST['update_auth_user'] ?? ''),
         'update_auth_password' => $newPass !== '' ? $newPass : ($config['update_auth_password'] ?? ''),
         'update_secret' => ($s = trim($_POST['update_secret'] ?? '')) !== '' ? $s : ($config['update_secret'] ?? ''),
@@ -87,6 +88,12 @@ $pageTitle = 'Admin — Config';
           <label>
             <input type="checkbox" name="update_use_basic_auth" value="1" <?php echo !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0' ? 'checked' : ''; ?>>
             Require login (username and password) for check/upgrade
+          </label>
+        </div>
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" name="update_require_login_always" value="1" <?php echo !empty($config['update_require_login_always']) && $config['update_require_login_always'] !== '0' ? 'checked' : ''; ?>>
+            Require login even when IP is on allowlist
           </label>
         </div>
         <label for="update_auth_user">Login username</label>

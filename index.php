@@ -52,6 +52,12 @@ $defaultText = 'https://example.com';
             Require username and password (login)
           </label>
         </div>
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" id="setup-require-login-always" name="update_require_login_always" value="1">
+            Require login even when IP is on allowlist
+          </label>
+        </div>
         <div id="setup-basic-auth-fields" class="setup-basic-fields">
           <label for="setup-user">Username</label>
           <input type="text" id="setup-user" name="update_auth_user" placeholder="admin" autocomplete="username">
