@@ -724,6 +724,9 @@ $defaultText = 'https://example.com';
         }
         if (d.updateAvailable && d.latestVersion) {
           setMsg('Update available: ' + d.latestVersion, 'has-update');
+          upgradeBtn.textContent = d.installType === 'zip' ? 'Download latest' : 'Upgrade (git pull)';
+          upgradeBtn.dataset.installType = d.installType || 'git';
+          upgradeBtn.dataset.releaseUrl = d.releaseUrl || '';
           upgradeBtn.style.display = 'inline-flex';
         } else {
           setMsg('You’re up to date.', '');
@@ -734,6 +737,11 @@ $defaultText = 'https://example.com';
   });
 
   upgradeBtn.addEventListener('click', function() {
+    if (upgradeBtn.dataset.installType === 'zip' && upgradeBtn.dataset.releaseUrl) {
+      window.open(upgradeBtn.dataset.releaseUrl, '_blank', 'noopener,noreferrer');
+      setMsg('Open the release page, download the zip, and replace the files.', 'has-update');
+      return;
+    }
     upgradeBtn.disabled = true;
     setMsg('Upgrading…', 'loading');
     var form = new FormData();
@@ -741,6 +749,11 @@ $defaultText = 'https://example.com';
     fetch('updates.php', { method: 'POST', body: form })
       .then(function(r) { return r.json(); })
       .then(function(d) {
+        if (d.noGit && d.releaseUrl) {
+          window.open(d.releaseUrl, '_blank', 'noopener,noreferrer');
+          setMsg('Open the release page, download the zip, and replace the files.', 'has-update');
+          return;
+        }
         if (d.success) {
           setMsg('Upgrade complete. Reload the page.', 'has-update');
           upgradeBtn.style.display = 'none';
