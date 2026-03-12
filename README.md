@@ -64,6 +64,8 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 | `index.php`    | Main page: form, preview, download links |
 | `generate.php` | Endpoint that outputs QR as PNG or SVG |
 | `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
+| `VERSION`     | App version (used for update check when not a git clone; first line only; update when releasing) |
+| `updates.php`  | Update check (GitHub releases) and upgrade (git pull or release-page link) |
 
 ## API (generate.php)
 
