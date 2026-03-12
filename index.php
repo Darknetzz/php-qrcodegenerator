@@ -861,9 +861,15 @@ $defaultText = 'https://example.com';
 
   function loadVersion() {
     fetch('updates.php?action=check', { credentials: 'include' })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (r.status === 401) {
+          versionEl.textContent = 'Version — (login to check)';
+          return null;
+        }
+        return r.json();
+      })
       .then(function(d) {
-        if (d.currentVersion) versionEl.textContent = 'Version ' + d.currentVersion;
+        if (d && d.currentVersion) versionEl.textContent = 'Version ' + d.currentVersion;
       })
       .catch(function() { versionEl.textContent = 'Version —'; });
   }
@@ -873,8 +879,24 @@ $defaultText = 'https://example.com';
     setMsg('Checking…', 'loading');
     upgradeBtn.style.display = 'none';
     fetch('updates.php?action=check', { credentials: 'include' })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (r.status === 401) {
+          var link = document.createElement('a');
+          link.href = 'updates.php?action=check';
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.textContent = 'Log in';
+          msgEl.textContent = '';
+          msgEl.innerHTML = 'Authentication required. ';
+          msgEl.appendChild(link);
+          msgEl.appendChild(document.createTextNode(' to log in, then retry.'));
+          msgEl.className = 'update-msg error';
+          return null;
+        }
+        return r.json();
+      })
       .then(function(d) {
+        if (d === null) return;
         if (d.error) {
           setMsg(d.error, 'error');
           return;
@@ -904,8 +926,15 @@ $defaultText = 'https://example.com';
     var form = new FormData();
     form.append('action', 'upgrade');
     fetch('updates.php', { method: 'POST', body: form, credentials: 'include' })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (r.status === 401) {
+          setMsg('Authentication required. Log in via the updates page, then retry.', 'error');
+          return null;
+        }
+        return r.json();
+      })
       .then(function(d) {
+        if (d === null) return;
         if (d.noGit && d.releaseUrl) {
           window.open(d.releaseUrl, '_blank', 'noopener,noreferrer');
           setMsg('Open the release page, download the zip, and replace the files.', 'has-update');

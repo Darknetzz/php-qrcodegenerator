@@ -92,6 +92,8 @@ By default, `updates.php` is open. To lock it down, copy `update-config.sample.p
 
 You can use IP allowlist and Basic Auth together.
 
+**Note:** Only the update endpoint (`updates.php`) is protected by this config. The main app (index.php, generate.php, including “Add custom module”) is not. To require login for the whole site, use your server’s auth (e.g. Apache `AuthType Basic` for the directory).
+
 ## API (generate.php)
 
 Query or POST parameters:
