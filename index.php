@@ -102,6 +102,7 @@ $defaultText = 'https://example.com';
           <button type="button" class="preset-tab" data-preset="custom" role="tab"><svg class="tab-icon" aria-hidden="true"><use href="#icon-custom"/></svg>Custom</button>
           <span id="custom-modules-tabs" class="settings-gated"></span>
           <button type="button" class="preset-tab preset-tab-add settings-gated" id="btn-add-module" title="Add custom module" aria-label="Add custom module">+</button>
+          <button type="button" class="preset-tab preset-tab-customize" id="btn-customize-tabs" title="Show or hide tabs" aria-label="Customize visible tabs">&#8942;</button>
         </div>
         <form id="qr-form" method="get" action="" autocomplete="off">
           <div id="preset-url" class="preset-panel">
@@ -248,8 +249,11 @@ $defaultText = 'https://example.com';
         <h3 id="custom-module-title">Add custom module</h3>
         <p class="text-muted modal-desc">Define a preset with a format string. Use <code>%s</code> for each field (e.g. <code>tel:%s</code> or <code>https://example.com?id=%s</code>).</p>
         <form id="add-module-form">
+          <input type="hidden" id="module-edit-id" value="">
           <label for="module-name">Name</label>
           <input type="text" id="module-name" placeholder="e.g. Phone" required autocomplete="off">
+          <label for="module-icon">Icon (optional — emoji or sprite name, e.g. 📞 or icon-phone)</label>
+          <input type="text" id="module-icon" placeholder="📞 or icon-phone" autocomplete="off">
           <label for="module-format">Format</label>
           <input type="text" id="module-format" placeholder="tel:%s" required autocomplete="off">
           <label for="module-labels">Field labels (comma-separated, one per %s)</label>
@@ -259,6 +263,17 @@ $defaultText = 'https://example.com';
             <button type="submit" class="btn btn-primary">Add</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="customize-tabs-modal" role="dialog" aria-labelledby="customize-tabs-title" aria-modal="true">
+      <div class="modal">
+        <h3 id="customize-tabs-title">Show or hide tabs</h3>
+        <p class="text-muted modal-desc">Uncheck presets to hide them from the tab bar.</p>
+        <div id="customize-tabs-list"></div>
+        <div class="modal-actions" style="margin-top:1rem;">
+          <button type="button" class="btn btn-primary" id="btn-customize-tabs-save">Save</button>
+        </div>
       </div>
     </div>
 
@@ -294,8 +309,10 @@ $defaultText = 'https://example.com';
   var currentPreset = 'wifi';
 
   var PRESET_IDS = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+  var PRESET_LABELS = { url: 'URL', wifi: 'Wi‑Fi', vcard: 'vCard', text: 'Text', email: 'Email', sms: 'SMS', bitcoin: 'Bitcoin', facebook: 'Facebook', pdf: 'PDF', mp3: 'MP3', appstore: 'App Store', image: 'Image', custom: 'Custom' };
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
+  var HIDDEN_PRESETS_KEY = 'qr-hidden-presets';
 
   function getCustomModules() {
     try {
@@ -307,6 +324,27 @@ $defaultText = 'https://example.com';
   }
   function setCustomModules(arr) {
     try { localStorage.setItem(CUSTOM_MODULES_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+  function getHiddenPresets() {
+    try {
+      var raw = localStorage.getItem(HIDDEN_PRESETS_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function setHiddenPresets(arr) {
+    try { localStorage.setItem(HIDDEN_PRESETS_KEY, JSON.stringify(arr)); } catch (e) {}
+  }
+  function applyDefaultPresetsVisibility() {
+    var hidden = getHiddenPresets();
+    PRESET_IDS.forEach(function(id) {
+      var tab = document.querySelector('.preset-tabs > .preset-tab[data-preset="' + id + '"]');
+      var panel = document.getElementById('preset-' + id);
+      var isHidden = hidden.indexOf(id) !== -1;
+      if (tab) tab.classList.toggle('preset-tab-hidden', isHidden);
+      if (panel) panel.classList.toggle('preset-panel-hidden', isHidden);
+    });
   }
   function getCustomModuleIds() {
     return getCustomModules().map(function(m) { return m.id; });
@@ -361,6 +399,24 @@ $defaultText = 'https://example.com';
     return (s || '').toString().replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/:/g, '\\:').replace(/"/g, '\\"');
   }
 
+  function renderCustomModuleIcon(container, icon) {
+    if (!icon) return;
+    var s = (icon || '').trim();
+    if (s.indexOf('icon-') === 0) {
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'tab-icon');
+      svg.setAttribute('aria-hidden', 'true');
+      var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', '#' + s);
+      svg.appendChild(use);
+      container.appendChild(svg);
+    } else if (s.length > 0) {
+      var span = document.createElement('span');
+      span.className = 'tab-icon tab-icon-emoji';
+      span.textContent = s.length <= 2 ? s : s.charAt(0);
+      container.appendChild(span);
+    }
+  }
   function renderCustomModules() {
     var tabsContainer = document.getElementById('custom-modules-tabs');
     var panelsContainer = document.getElementById('custom-modules-panels');
@@ -376,7 +432,17 @@ $defaultText = 'https://example.com';
       tab.className = 'preset-tab';
       tab.setAttribute('data-preset', m.id);
       tab.setAttribute('role', 'tab');
-      tab.textContent = m.name;
+      renderCustomModuleIcon(tab, m.icon);
+      tab.appendChild(document.createTextNode(m.name));
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'preset-tab-custom-edit';
+      editBtn.setAttribute('aria-label', 'Edit ' + m.name);
+      editBtn.textContent = '\u270e';
+      editBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        openModuleModalForEdit(m);
+      });
       var delBtn = document.createElement('button');
       delBtn.type = 'button';
       delBtn.className = 'preset-tab-custom-del';
@@ -390,6 +456,7 @@ $defaultText = 'https://example.com';
         if (currentPreset === m.id) setPreset('text');
       });
       wrap.appendChild(tab);
+      wrap.appendChild(editBtn);
       wrap.appendChild(delBtn);
       tabsContainer.appendChild(wrap);
       var panel = document.createElement('div');
@@ -575,26 +642,54 @@ $defaultText = 'https://example.com';
   form.addEventListener('change', update);
 
   renderCustomModules();
+  var hidden = getHiddenPresets();
+  if (hidden.length >= PRESET_IDS.length) { setHiddenPresets([]); hidden = []; }
+  applyDefaultPresetsVisibility();
   var saved = null;
   try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
-  var allIds = PRESET_IDS.concat(getCustomModuleIds());
-  var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : 'text';
+  var visibleDefaults = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
+  var allIds = visibleDefaults.concat(getCustomModuleIds());
+  var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (visibleDefaults[0] || 'text');
   setPreset(initial);
 
+  function openModuleModalForEdit(m) {
+    var titleEl = document.getElementById('custom-module-title');
+    var editIdEl = document.getElementById('module-edit-id');
+    var nameEl = document.getElementById('module-name');
+    var iconEl = document.getElementById('module-icon');
+    var formatEl = document.getElementById('module-format');
+    var labelsEl = document.getElementById('module-labels');
+    if (titleEl) titleEl.textContent = 'Edit custom module';
+    if (editIdEl) editIdEl.value = m.id;
+    if (nameEl) nameEl.value = m.name || '';
+    if (iconEl) iconEl.value = m.icon || '';
+    if (formatEl) formatEl.value = m.format || '';
+    if (labelsEl) labelsEl.value = (m.fields || []).map(function(f) { return f.label || ''; }).join(', ');
+    document.getElementById('custom-module-modal').classList.add('visible');
+  }
   (function customModuleModal() {
     var modal = document.getElementById('custom-module-modal');
     var addForm = document.getElementById('add-module-form');
     var btnAdd = document.getElementById('btn-add-module');
     var btnCancel = document.getElementById('btn-cancel-module');
+    var titleEl = document.getElementById('custom-module-title');
     if (!modal || !addForm || !btnAdd) return;
-    function show() { modal.classList.add('visible'); }
-    function hide() { modal.classList.remove('visible'); addForm.reset(); }
+    function show() {
+      if (titleEl) titleEl.textContent = 'Add custom module';
+      var editIdEl = document.getElementById('module-edit-id');
+      if (editIdEl) editIdEl.value = '';
+      addForm.reset();
+      modal.classList.add('visible');
+    }
+    function hide() { modal.classList.remove('visible'); addForm.reset(); var e = document.getElementById('module-edit-id'); if (e) e.value = ''; }
     btnAdd.addEventListener('click', show);
     btnCancel.addEventListener('click', hide);
     modal.addEventListener('click', function(e) { if (e.target === modal) hide(); });
     addForm.addEventListener('submit', function(e) {
       e.preventDefault();
+      var editId = (document.getElementById('module-edit-id').value || '').trim();
       var name = (document.getElementById('module-name').value || '').trim();
+      var icon = (document.getElementById('module-icon').value || '').trim();
       var format = (document.getElementById('module-format').value || '').trim();
       var labelsStr = (document.getElementById('module-labels').value || '').trim();
       if (!name || !format) return;
@@ -604,13 +699,65 @@ $defaultText = 'https://example.com';
       var labels = labelsStr ? labelsStr.split(',').map(function(s) { return s.trim(); }) : [];
       while (labels.length < numFields) labels.push('Field ' + (labels.length + 1));
       var modules = getCustomModules();
-      var newId = nextCustomId();
-      modules.push({ id: newId, name: name, format: format, fields: labels.slice(0, numFields).map(function(l) { return { label: l, placeholder: '' }; }) });
-      setCustomModules(modules);
-      renderCustomModules();
-      setPreset(newId);
+      var fields = labels.slice(0, numFields).map(function(l) { return { label: l, placeholder: '' }; });
+      if (editId) {
+        var idx = modules.findIndex(function(x) { return x.id === editId; });
+        if (idx !== -1) {
+          modules[idx] = { id: editId, name: name, icon: icon, format: format, fields: fields };
+          setCustomModules(modules);
+          renderCustomModules();
+          setPreset(editId);
+        }
+      } else {
+        var newId = nextCustomId();
+        modules.push({ id: newId, name: name, icon: icon, format: format, fields: fields });
+        setCustomModules(modules);
+        renderCustomModules();
+        setPreset(newId);
+      }
       hide();
     });
+  })();
+
+  (function customizeTabsModal() {
+    var modal = document.getElementById('customize-tabs-modal');
+    var listEl = document.getElementById('customize-tabs-list');
+    var btnOpen = document.getElementById('btn-customize-tabs');
+    var btnSave = document.getElementById('btn-customize-tabs-save');
+    if (!modal || !listEl || !btnOpen || !btnSave) return;
+    btnOpen.addEventListener('click', function() {
+      listEl.textContent = '';
+      var hidden = getHiddenPresets();
+      PRESET_IDS.forEach(function(id) {
+        var label = document.createElement('label');
+        label.className = 'checkbox-row';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = hidden.indexOf(id) === -1;
+        cb.value = id;
+        cb.id = 'ct-' + id;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(' ' + (PRESET_LABELS[id] || id)));
+        listEl.appendChild(label);
+      });
+      modal.classList.add('visible');
+    });
+    btnSave.addEventListener('click', function() {
+      var hidden = [];
+      PRESET_IDS.forEach(function(id) {
+        var cb = document.getElementById('ct-' + id);
+        if (cb && !cb.checked) hidden.push(id);
+      });
+      if (hidden.length >= PRESET_IDS.length) return;
+      setHiddenPresets(hidden);
+      applyDefaultPresetsVisibility();
+      if (hidden.indexOf(currentPreset) !== -1) {
+        var vis = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
+        setPreset(vis[0] || 'text');
+      }
+      modal.classList.remove('visible');
+    });
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('visible'); });
   })();
 })();
 

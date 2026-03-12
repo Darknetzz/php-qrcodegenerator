@@ -301,6 +301,16 @@ label { display: flex; align-items: center; }
 
 .preset-tab-custom-del:hover { color: var(--text); background: var(--border); }
 
+.preset-tab-custom-edit { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0 0.2em; font-size: 0.9rem; line-height: 1; border-radius: 2px; }
+.preset-tab-custom-edit:hover { color: var(--text); background: var(--border); }
+
+.preset-tab-hidden,
+.preset-panel-hidden { display: none !important; }
+
+.tab-icon-emoji { font-size: 1.1em; line-height: 1; }
+
+.preset-tab-customize { font-size: 1.1rem; padding: 0.25em 0.5em; min-width: 2em; }
+
 .preset-tab.active {
   color: var(--accent);
   border-color: var(--accent);
