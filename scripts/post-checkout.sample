@@ -1,0 +1,3 @@
+#!/bin/sh
+# Copy to .git/hooks/post-checkout and chmod +x to keep VERSION in sync after git checkout.
+exec php "$(git rev-parse --show-toplevel)/update-version.php"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Copy to .git/hooks/post-merge and chmod +x to keep VERSION in sync after git pull.
+exec php "$(git rev-parse --show-toplevel)/update-version.php"

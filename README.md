@@ -64,8 +64,17 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 | `index.php`    | Main page: form, preview, download links |
 | `generate.php` | Endpoint that outputs QR as PNG or SVG |
 | `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
-| `VERSION`     | App version (used for update check when not a git clone; first line only; update when releasing) |
+| `VERSION`     | App version (first line only; for zip installs; in git, version is computed from `git describe`) |
 | `updates.php`  | Update check (GitHub releases) and upgrade (git pull or release-page link) |
+| `update-version.php` | CLI: writes current git version to VERSION (run before release zip, or from a git hook) |
+
+## Version
+
+- **Git clone:** Version is computed at runtime: exact tag (e.g. `1.0.0`) or `1.0.0-<shortcommit>` when not on a tag.
+- **Zip install:** Version is read from the `VERSION` file (first line).
+- To refresh `VERSION` from git (e.g. before building a release zip), run from the project root:  
+  `php update-version.php`  
+  Optional: copy `scripts/post-checkout.sample` to `.git/hooks/post-checkout` and `scripts/post-merge.sample` to `.git/hooks/post-merge`, then `chmod +x`, so `VERSION` is updated automatically after checkout/pull.
 
 ## API (generate.php)
 
