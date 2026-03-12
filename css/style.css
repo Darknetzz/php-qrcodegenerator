@@ -311,6 +311,9 @@ label { display: flex; align-items: center; }
 
 .preset-tab-customize { font-size: 1.1rem; padding: 0.25em 0.5em; min-width: 2em; }
 
+#customize-tabs-list { display: flex; flex-direction: column; gap: 0.5rem; }
+#customize-tabs-list .checkbox-row { margin-bottom: 0; }
+
 .preset-tab.active {
   color: var(--accent);
   border-color: var(--accent);
