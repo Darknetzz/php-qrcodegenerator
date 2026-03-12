@@ -157,9 +157,29 @@ $defaultText = 'https://example.com';
     }
     .actions {
       margin-top: 1.25rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+    }
+    .btn-group {
+      display: inline-flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+    }
+    .btn-group .btn {
+      border-radius: 0;
+      border: none;
+      border-right: 1px solid var(--border);
+    }
+    .btn-group .btn:last-child {
+      border-right: none;
+    }
+    .btn-group .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-group .btn-primary:hover {
+      background: var(--accent-hover);
+      color: #fff;
     }
     .btn {
       display: inline-flex;
@@ -412,8 +432,10 @@ $defaultText = 'https://example.com';
           <span id="preview-placeholder" class="preview-placeholder">Enter content to see preview</span>
         </div>
         <div class="actions">
-          <a id="dl-png" class="btn btn-primary" href="#" download="qrcode.png">Download PNG</a>
-          <a id="dl-svg" class="btn btn-secondary" href="#" download="qrcode.svg">Download SVG</a>
+          <div class="btn-group">
+            <a id="dl-png" class="btn btn-primary" href="#" download="qrcode.png">Download PNG</a>
+            <a id="dl-svg" class="btn btn-secondary" href="#" download="qrcode.svg">Download SVG</a>
+          </div>
         </div>
       </div>
     </div>
