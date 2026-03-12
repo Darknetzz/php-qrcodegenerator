@@ -263,3 +263,74 @@ body.admin-tab-auth .admin-save-modules {
 .admin-module-form .btn {
   margin-top: 0.75rem;
 }
+
+.admin-module-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-btn-add-module {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #000;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.admin-btn-add-module:hover {
+  background: #16a34a;
+}
+
+/* Admin add-module modal */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.admin-modal-overlay[hidden] {
+  display: none;
+}
+
+.admin-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  max-width: 24rem;
+  width: 100%;
+}
+
+.admin-modal h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.1rem;
+}
+
+.admin-modal .sub {
+  margin-bottom: 1rem;
+}
+
+.admin-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.admin-modal-cancel {
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+.admin-modal-cancel:hover {
+  background: var(--border);
+}

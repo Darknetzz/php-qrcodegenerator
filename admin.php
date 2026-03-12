@@ -250,48 +250,87 @@ if (!in_array($tab, $validTabs, true)) {
 
     <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
       <div class="panel">
-        <h2>Custom modules</h2>
-          <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
-          <?php if (count($adminModules) > 0) { ?>
-          <ul class="admin-module-list">
-            <?php foreach ($adminModules as $m) {
-                $mid = isset($m['id']) ? $m['id'] : '';
-                $mname = isset($m['name']) ? $m['name'] : '';
-                $mformat = isset($m['format']) ? $m['format'] : '';
-                $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
-            ?>
-            <li class="admin-module-item">
-              <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
-              <span class="admin-module-actions">
-                <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
-                <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
-                  <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
-                  <input type="hidden" name="delete_module_id" value="<?php echo htmlspecialchars($mid); ?>">
-                  <button type="submit" class="admin-module-delete">Delete</button>
-                </form>
-              </span>
-            </li>
-            <?php } ?>
-          </ul>
-          <?php } else { ?>
-          <p class="sub">No custom modules yet. Add one below.</p>
+        <h2 class="admin-module-heading">Custom modules <button type="button" class="admin-btn-add-module" id="admin-btn-add-module" aria-label="Add custom module">+ Add</button></h2>
+        <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
+        <?php if (count($adminModules) > 0) { ?>
+        <ul class="admin-module-list">
+          <?php foreach ($adminModules as $m) {
+              $mid = isset($m['id']) ? $m['id'] : '';
+              $mname = isset($m['name']) ? $m['name'] : '';
+              $mformat = isset($m['format']) ? $m['format'] : '';
+              $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
+          ?>
+          <li class="admin-module-item">
+            <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
+            <span class="admin-module-actions">
+              <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
+              <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
+                <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+                <input type="hidden" name="delete_module_id" value="<?php echo htmlspecialchars($mid); ?>">
+                <button type="submit" class="admin-module-delete">Delete</button>
+              </form>
+            </span>
+          </li>
           <?php } ?>
-          <h3 class="admin-module-form-title"><?php echo $editModule ? 'Edit module' : 'Add module'; ?><?php if ($editModule) { ?> <a href="<?php echo $baseUrl; ?>&amp;tab=modules" class="admin-module-cancel">Cancel</a><?php } ?></h3>
-          <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
-          <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
-            <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
-            <input type="hidden" name="module_edit_id" value="<?php echo $editModule ? htmlspecialchars($editModule['id'] ?? '') : ''; ?>">
-            <label for="module_name">Name</label>
-            <input type="text" id="module_name" name="module_name" value="<?php echo $editModule ? htmlspecialchars($editModule['name'] ?? '') : ''; ?>" placeholder="e.g. Phone" required autocomplete="off">
-            <label for="module_icon">Icon (optional — emoji or sprite name, e.g. &#x1F4DE; or icon-phone)</label>
-            <input type="text" id="module_icon" name="module_icon" value="<?php echo $editModule ? htmlspecialchars($editModule['icon'] ?? '') : ''; ?>" placeholder="&#x1F4DE; or icon-phone" autocomplete="off">
-            <label for="module_format">Format (use %s for each field)</label>
-            <input type="text" id="module_format" name="module_format" value="<?php echo $editModule ? htmlspecialchars($editModule['format'] ?? '') : ''; ?>" placeholder="tel:%s" required autocomplete="off">
-            <label for="module_labels">Field labels (comma-separated, one per %s)</label>
-            <input type="text" id="module_labels" name="module_labels" value="<?php echo $editModule && !empty($editModule['fields']) ? htmlspecialchars(implode(', ', array_column($editModule['fields'], 'label'))) : ''; ?>" placeholder="e.g. Phone number" autocomplete="off">
-            <button type="submit" class="btn"><?php echo $editModule ? 'Update module' : 'Add module'; ?></button>
-          </form>
+        </ul>
+        <?php } else { ?>
+        <p class="sub">No custom modules yet. Click <strong>+ Add</strong> to create one.</p>
+        <?php } ?>
+        <?php if ($editModule) { ?>
+        <h3 class="admin-module-form-title">Edit module <a href="<?php echo $baseUrl; ?>&amp;tab=modules" class="admin-module-cancel">Cancel</a></h3>
+        <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
+        <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
+          <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+          <input type="hidden" name="module_edit_id" value="<?php echo htmlspecialchars($editModule['id'] ?? ''); ?>">
+          <label for="module_name">Name</label>
+          <input type="text" id="module_name" name="module_name" value="<?php echo htmlspecialchars($editModule['name'] ?? ''); ?>" placeholder="e.g. Phone" required autocomplete="off">
+          <label for="module_icon">Icon (optional)</label>
+          <input type="text" id="module_icon" name="module_icon" value="<?php echo htmlspecialchars($editModule['icon'] ?? ''); ?>" placeholder="&#x1F4DE; or icon-phone" autocomplete="off">
+          <label for="module_format">Format (use %s for each field)</label>
+          <input type="text" id="module_format" name="module_format" value="<?php echo htmlspecialchars($editModule['format'] ?? ''); ?>" placeholder="tel:%s" required autocomplete="off">
+          <label for="module_labels">Field labels (comma-separated)</label>
+          <input type="text" id="module_labels" name="module_labels" value="<?php echo $editModule && !empty($editModule['fields']) ? htmlspecialchars(implode(', ', array_column($editModule['fields'], 'label'))) : ''; ?>" placeholder="e.g. Phone number" autocomplete="off">
+          <button type="submit" class="btn">Update module</button>
+        </form>
+        <?php } elseif ($error !== '' && isset($_POST['module_name'])) { ?>
+        <p class="msg err"><?php echo htmlspecialchars($error); ?></p>
+        <?php } ?>
       </div>
+
+      <div class="admin-modal-overlay" id="admin-module-modal" role="dialog" aria-labelledby="admin-module-modal-title" aria-modal="true" hidden>
+        <div class="admin-modal">
+          <h3 id="admin-module-modal-title">Add custom module</h3>
+          <p class="sub">Use <code>%s</code> in the format for each field (e.g. <code>tel:%s</code>).</p>
+          <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-modal-form">
+            <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+            <label for="admin_modal_module_name">Name</label>
+            <input type="text" id="admin_modal_module_name" name="module_name" placeholder="e.g. Phone" required autocomplete="off">
+            <label for="admin_modal_module_icon">Icon (optional — emoji or icon-phone)</label>
+            <input type="text" id="admin_modal_module_icon" name="module_icon" placeholder="&#x1F4DE; or icon-phone" autocomplete="off">
+            <label for="admin_modal_module_format">Format (use %s for each field)</label>
+            <input type="text" id="admin_modal_module_format" name="module_format" placeholder="tel:%s" required autocomplete="off">
+            <label for="admin_modal_module_labels">Field labels (comma-separated)</label>
+            <input type="text" id="admin_modal_module_labels" name="module_labels" placeholder="e.g. Phone number" autocomplete="off">
+            <div class="admin-modal-actions">
+              <button type="button" class="btn admin-modal-cancel" id="admin-module-modal-cancel">Cancel</button>
+              <button type="submit" class="btn">Add module</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <script>
+        (function() {
+          var btn = document.getElementById('admin-btn-add-module');
+          var modal = document.getElementById('admin-module-modal');
+          var cancel = document.getElementById('admin-module-modal-cancel');
+          if (!btn || !modal) return;
+          function openModal() { modal.removeAttribute('hidden'); }
+          function closeModal() { modal.setAttribute('hidden', ''); }
+          btn.addEventListener('click', openModal);
+          cancel.addEventListener('click', closeModal);
+          modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+        })();
+      </script>
       <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
         <input type="hidden" name="tab" value="modules">
