@@ -22,14 +22,16 @@ A self-contained QR code generator that runs on any Apache or Nginx server with 
 
 ## Requirements
 
-- PHP 7.0+ (or 5.x with minor adjustments)
+- PHP 8.2+
 - GD extension (for PNG; SVG does not require GD)
+- [Composer](https://getcomposer.org/) (for dependency installation)
 
 ## Installation
 
 1. Copy the project into your web root (e.g. `htdocs/qr` or `/var/www/html/qr`).
-2. Ensure PHP has the GD extension enabled (default on most LAMP/LEMP stacks).
-3. Open `https://your-server/qr/` (or `index.php`) in a browser.
+2. Run `composer install` in the project directory (installs [chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)).
+3. Ensure PHP has the GD extension enabled (default on most LAMP/LEMP stacks).
+4. Open `https://your-server/qr/` (or `index.php`) in a browser.
 
 ### Apache
 
@@ -59,7 +61,7 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 |----------------|--------|
 | `index.php`    | Main page: form, preview, download links |
 | `generate.php` | Endpoint that outputs QR as PNG or SVG |
-| `phpqrcode.php`| Single-file QR library (LGPL, from [t0k4rt/phpqrcode](https://github.com/t0k4rt/phpqrcode)) |
+| `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
 
 ## API (generate.php)
 
@@ -82,5 +84,5 @@ Example:
 ## License
 
 - This project: use as you like.
-- `phpqrcode.php`: LGPL 3 (see header in file).  
+- chillerlan/php-qrcode: MIT (see [vendor/chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)).  
 - “QR Code” is a registered trademark of DENSO WAVE INCORPORATED.

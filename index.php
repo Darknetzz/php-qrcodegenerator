@@ -383,7 +383,7 @@ $defaultText = 'https://example.com';
     </div>
 
     <p class="foot">
-      Uses <a href="https://github.com/t0k4rt/phpqrcode" target="_blank" rel="noopener">PHP QR Code</a> (LGPL).
+      Uses <a href="https://github.com/chillerlan/php-qrcode" target="_blank" rel="noopener">chillerlan/php-qrcode</a> (MIT).
       No data is stored on the server. For very long content, use the download buttons.
     </p>
   </div>

@@ -11,8 +11,7 @@ use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use chillerlan\QRCode\Common\EccLevel;
 use chillerlan\QRCode\Data\QRMatrix;
-use chillerlan\QRCode\Output\QRGdImagePNG;
-use chillerlan\QRCode\Output\QRMarkupSVG;
+use chillerlan\QRCode\Output\QROutputInterface;
 
 /** @return int[]|null [R, G, B] or null if invalid */
 function hex_to_rgb(string $hex): ?array {
@@ -95,9 +94,9 @@ $baseOptions = [
 
 if ($format === 'svg') {
     $options = new QROptions(array_merge($baseOptions, [
-        'outputInterface' => QRMarkupSVG::class,
-        'bgColor'         => $bgNorm,
-        'moduleValues'     => dark_module_values_hex($fgNorm),
+        'outputType'   => QROutputInterface::MARKUP_SVG,
+        'bgColor'      => $bgNorm,
+        'moduleValues' => dark_module_values_hex($fgNorm),
     ]));
     $qr = new QRCode($options);
     $output = $qr->render($text);
@@ -109,9 +108,9 @@ if ($format === 'svg') {
 }
 
 $options = new QROptions(array_merge($baseOptions, [
-    'outputInterface' => QRGdImagePNG::class,
-    'bgColor'         => $bgRgb,
-    'moduleValues'     => dark_module_values_rgb($fgRgb),
+    'outputType'   => QROutputInterface::GDIMAGE_PNG,
+    'bgColor'      => $bgRgb,
+    'moduleValues' => dark_module_values_rgb($fgRgb),
 ]));
 $qr = new QRCode($options);
 $output = $qr->render($text);
