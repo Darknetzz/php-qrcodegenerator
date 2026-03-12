@@ -60,6 +60,24 @@ function normalize_git_version(string $describe): string {
     return $describe;
 }
 
+/** Read version from VERSION file (first non-comment line) or return null */
+function read_version_file(string $repoRoot): ?string {
+    $versionFile = $repoRoot . '/VERSION';
+    if (!is_file($versionFile) || !is_readable($versionFile)) {
+        return null;
+    }
+    $raw = @file_get_contents($versionFile);
+    if ($raw === false) {
+        return null;
+    }
+    $firstLine = strtok($raw, "\n");
+    $v = $firstLine !== false ? trim($firstLine) : '';
+    if ($v === '' || $v[0] === '#') {
+        return null;
+    }
+    return $v;
+}
+
 /** Current version: from git if available (1.0.0 or 1.0.0-<commit>), else from VERSION file */
 function get_local_version(string $repoRoot, bool $isGit): string {
     if ($isGit) {
@@ -68,20 +86,14 @@ function get_local_version(string $repoRoot, bool $isGit): string {
             escapeshellarg($repoRoot)
         );
         $out = @shell_exec($cmd);
-        return $out !== null ? normalize_git_version(trim($out)) : 'unknown';
-    }
-    $versionFile = $repoRoot . '/VERSION';
-    if (is_file($versionFile) && is_readable($versionFile)) {
-        $raw = @file_get_contents($versionFile);
-        if ($raw !== false) {
-            $firstLine = strtok($raw, "\n");
-            $v = $firstLine !== false ? trim($firstLine) : '';
-            if ($v !== '' && $v[0] !== '#') {
+        if ($out !== null) {
+            $v = normalize_git_version(trim($out));
+            if ($v !== 'unknown') {
                 return $v;
             }
         }
     }
-    return 'unknown';
+    return read_version_file($repoRoot) ?? 'unknown';
 }
 
 /** Fetch latest release from GitHub API; fallback to latest tag. Returns [tag_name, html_url] or null */
