@@ -86,12 +86,12 @@ $pageTitle = 'Admin — Config';
         <div class="checkbox-row">
           <label>
             <input type="checkbox" name="update_use_basic_auth" value="1" <?php echo !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0' ? 'checked' : ''; ?>>
-            Require HTTP Basic Auth for check/upgrade
+            Require login (username and password) for check/upgrade
           </label>
         </div>
-        <label for="update_auth_user">Basic Auth username</label>
+        <label for="update_auth_user">Login username</label>
         <input type="text" id="update_auth_user" name="update_auth_user" value="<?php echo htmlspecialchars($config['update_auth_user'] ?? ''); ?>" autocomplete="off">
-        <label for="update_auth_password">Basic Auth password</label>
+        <label for="update_auth_password">Login password</label>
         <input type="password" id="update_auth_password" name="update_auth_password" value="" autocomplete="new-password" placeholder="Leave blank to keep current">
         <p class="hint">Leave blank to keep current value.</p>
 

@@ -2,14 +2,20 @@
 /**
  * Update check (GitHub releases) and upgrade (git pull or release page) endpoint.
  * Config is loaded from SQLite (data/config.sqlite), seeded from config.php on first run.
- * Access control: IP allowlist, Basic Auth, and upgrade secret are set in admin or config.php.
+ * Access control: IP allowlist, login (username/password), and upgrade secret are set in admin or config.php.
  *
- * GET  ?action=config-status → { configured } — whether IP/Basic Auth is set; if set, requires auth
+ * GET  ?action=config-status → { configured } — whether IP/login is set; if set, requires auth (session)
+ * POST ?action=login (username, password) → session login; returns { success } or 401
+ * POST ?action=logout → clear session
  * POST ?action=save-initial-config → save first-time setup (only when not yet configured)
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
 header('Content-Type: application/json; charset=utf-8');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+}
 
 $repoRoot = realpath(__DIR__);
 if ($repoRoot === false) {
@@ -48,14 +54,14 @@ function ip_in_list(string $ip, string $list): bool {
     return false;
 }
 
-/** Whether access control (IP allowlist or Basic Auth) is configured. */
+/** Whether access control (IP allowlist or login) is configured. */
 function is_access_configured(array $config): bool {
     $allowlist = trim($config['update_ip_allowlist'] ?? '');
     $useBasic = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
     return $allowlist !== '' || $useBasic;
 }
 
-/** Enforce IP allowlist and/or HTTP Basic Auth for check/upgrade. Exits with 401/403 if denied. */
+/** Enforce IP allowlist and/or login (session). Exits with 401/403 if denied. */
 function require_updates_access(array $config): void {
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
     $allowlist = trim($config['update_ip_allowlist'] ?? '');
@@ -67,8 +73,8 @@ function require_updates_access(array $config): void {
             exit;
         }
     }
-    $useBasic = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
-    if ($useBasic) {
+    $useLogin = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
+    if ($useLogin) {
         $user = trim($config['update_auth_user'] ?? '');
         $pass = trim($config['update_auth_password'] ?? '');
         if ($pass === '' && getenv('UPDATE_AUTH_PASSWORD') !== false) {
@@ -76,13 +82,10 @@ function require_updates_access(array $config): void {
         }
         if ($user === '' || $pass === '') {
             http_response_code(500);
-            echo json_encode(['error' => 'Basic Auth configured but user/password not set'], JSON_UNESCAPED_SLASHES);
+            echo json_encode(['error' => 'Login configured but user/password not set'], JSON_UNESCAPED_SLASHES);
             exit;
         }
-        $givenUser = $_SERVER['PHP_AUTH_USER'] ?? '';
-        $givenPass = $_SERVER['PHP_AUTH_PW'] ?? '';
-        if ($givenUser === '' || $givenPass === '' || !hash_equals($user, $givenUser) || !hash_equals($pass, $givenPass)) {
-            header('WWW-Authenticate: Basic realm="Updates"');
+        if (empty($_SESSION['qr_authenticated'])) {
             http_response_code(401);
             echo json_encode(['error' => 'Authentication required'], JSON_UNESCAPED_SLASHES);
             exit;
@@ -91,6 +94,35 @@ function require_updates_access(array $config): void {
 }
 
 $action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
+
+if ($action === 'login') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        json_exit(['error' => 'Use POST'], 405);
+    }
+    $user = trim($config['update_auth_user'] ?? '');
+    $pass = trim($config['update_auth_password'] ?? '');
+    if ($pass === '' && getenv('UPDATE_AUTH_PASSWORD') !== false) {
+        $pass = (string) getenv('UPDATE_AUTH_PASSWORD');
+    }
+    $givenUser = trim($_POST['username'] ?? '');
+    $givenPass = (string) ($_POST['password'] ?? '');
+    if ($user === '' || $pass === '' || $givenUser === '' || $givenPass === '' || !hash_equals($user, $givenUser) || !hash_equals($pass, $givenPass)) {
+        http_response_code(401);
+        json_exit(['error' => 'Invalid username or password']);
+    }
+    $_SESSION['qr_authenticated'] = true;
+    json_exit(['success' => true]);
+}
+
+if ($action === 'logout') {
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $p = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 3600, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+    }
+    session_destroy();
+    json_exit(['success' => true]);
+}
 
 if ($action === 'config-status') {
     if (is_access_configured($config)) {
@@ -111,7 +143,7 @@ if ($action === 'save-initial-config') {
     $authUser = trim($_POST['update_auth_user'] ?? '');
     $authPass = trim($_POST['update_auth_password'] ?? '');
     if ($allowlist === '' && (!$useBasic || $authUser === '' || $authPass === '')) {
-        json_exit(['error' => 'Set at least an IP allowlist or enable Basic Auth with username and password'], 400);
+        json_exit(['error' => 'Set at least an IP allowlist or enable login with username and password'], 400);
     }
     $updates = [
         'update_repo' => trim($config['update_repo'] ?? ''),

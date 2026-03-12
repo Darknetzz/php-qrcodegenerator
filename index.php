@@ -40,7 +40,7 @@ $defaultText = 'https://example.com';
   <div id="onboarding" class="onboarding" aria-labelledby="onboarding-title">
     <div class="onboarding-inner">
       <h1 id="onboarding-title">Setup</h1>
-      <p class="sub">Configure access control to continue. You must set either an IP allowlist or a login (Basic Auth).</p>
+      <p class="sub">Configure access control to continue. You must set either an IP allowlist or a login (username and password).</p>
       <div id="onboarding-error" class="msg err" style="display:none;"></div>
       <form id="onboarding-form" class="panel">
         <label for="setup-ip">IP allowlist (comma-separated)</label>
@@ -49,7 +49,7 @@ $defaultText = 'https://example.com';
         <div class="checkbox-row">
           <label>
             <input type="checkbox" id="setup-use-basic" name="update_use_basic_auth" value="1">
-            Require username and password (Basic Auth)
+            Require username and password (login)
           </label>
         </div>
         <div id="setup-basic-auth-fields" class="setup-basic-fields">
@@ -58,7 +58,7 @@ $defaultText = 'https://example.com';
           <label for="setup-password">Password</label>
           <input type="password" id="setup-password" name="update_auth_password" placeholder="" autocomplete="new-password">
         </div>
-        <p class="hint">Set at least an IP allowlist or enable Basic Auth with username and password.</p>
+        <p class="hint">Set at least an IP allowlist or enable login with username and password.</p>
         <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Save and continue</button>
       </form>
     </div>
@@ -256,6 +256,7 @@ $defaultText = 'https://example.com';
       <span class="update-msg" id="update-msg"></span>
       <button type="button" class="btn btn-primary" id="btn-upgrade"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
       <a href="admin.php" class="btn btn-secondary admin-link">Admin</a>
+      <button type="button" class="btn btn-secondary" id="btn-logout" style="display:none;">Log out</button>
     </div>
   </div>
   </div>
@@ -644,13 +645,39 @@ $defaultText = 'https://example.com';
     fetch('updates.php?action=config-status', { credentials: 'include' })
       .then(function(r) {
         if (r.status === 401 || r.status === 403) {
+          var btnLogout = document.getElementById('btn-logout');
+          if (btnLogout) btnLogout.style.display = 'none';
           showApp();
           setGatedVisible(false);
           setGateMessage(
             'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
-            '<a href="admin.php">Admin</a> &middot; <a href="updates.php?action=check" target="_blank" rel="noopener">Log in</a>.',
+            '<div class="login-form"><form id="login-form"><label for="login-username">Username</label><input type="text" id="login-username" name="username" autocomplete="username" required> ' +
+            '<label for="login-password">Password</label><input type="password" id="login-password" name="password" autocomplete="current-password" required> ' +
+            '<div class="login-actions"><button type="submit" class="btn btn-primary">Log in</button></div><div id="login-form-error" class="login-error"></div></form></div>',
             ''
           );
+          var loginForm = document.getElementById('login-form');
+          if (loginForm) {
+            loginForm.addEventListener('submit', function(ev) {
+              ev.preventDefault();
+              var errEl = document.getElementById('login-form-error');
+              if (errEl) errEl.textContent = '';
+              var fd = new FormData(loginForm);
+              fd.append('action', 'login');
+              fetch('updates.php', { method: 'POST', body: fd, credentials: 'include' })
+                .then(function(res) { return res.json().then(function(d) { return { status: res.status, data: d }; }); })
+                .then(function(r) {
+                  if (r.status === 200 && r.data && r.data.success) {
+                    setGatedVisible(true);
+                    setGateMessage('');
+                    applyConfigStatus();
+                  } else {
+                    if (errEl) errEl.textContent = (r.data && r.data.error) || 'Login failed.';
+                  }
+                })
+                .catch(function() { if (errEl) errEl.textContent = 'Login failed.'; });
+            });
+          }
           var activeTab = document.querySelector('.preset-tab.active');
           if (activeTab && (activeTab.getAttribute('data-preset') || '').indexOf('custom-') === 0) {
             var textTab = document.querySelector('.preset-tab[data-preset="text"]');
@@ -662,14 +689,19 @@ $defaultText = 'https://example.com';
       })
       .then(function(d) {
         if (d === undefined) return;
+        var btnLogout = document.getElementById('btn-logout');
         if (d.configured) {
           showApp();
+          if (btnLogout) btnLogout.style.display = '';
         } else {
           showOnboarding();
+          if (btnLogout) btnLogout.style.display = 'none';
         }
       })
       .catch(function() {
         showApp();
+        var btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) btnLogout.style.display = 'none';
       });
   }
 
@@ -697,7 +729,7 @@ $defaultText = 'https://example.com';
       var pass = (document.getElementById('setup-password') && document.getElementById('setup-password').value || '').trim();
       if (ip === '' && (!useBasic || user === '' || pass === '')) {
         if (onboardingError) {
-          onboardingError.textContent = 'Set at least an IP allowlist or enable Basic Auth with username and password.';
+          onboardingError.textContent = 'Set at least an IP allowlist or enable login with username and password.';
           onboardingError.style.display = 'block';
         }
         return;
@@ -819,6 +851,16 @@ $defaultText = 'https://example.com';
       .catch(function() { setMsg('Upgrade request failed.', 'error'); })
       .finally(function() { upgradeBtn.disabled = false; });
   });
+
+  var btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function() {
+      var fd = new FormData();
+      fd.append('action', 'logout');
+      fetch('updates.php', { method: 'POST', body: fd, credentials: 'include' })
+        .then(function() { applyConfigStatus(); });
+    });
+  }
 
   applyConfigStatus();
 })();
