@@ -74,7 +74,8 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 - **Zip install:** Version is read from the `VERSION` file (first line).
 - To refresh `VERSION` from git (e.g. before building a release zip), run from the project root:  
   `php update-version.php`  
-  Optional: copy `scripts/post-checkout.sample` to `.git/hooks/post-checkout` and `scripts/post-merge.sample` to `.git/hooks/post-merge`, then `chmod +x`, so `VERSION` is updated automatically after checkout/pull.
+  Optional: copy `scripts/post-checkout.sample` to `.git/hooks/post-checkout` and `scripts/post-merge.sample` to `.git/hooks/post-merge`, then `chmod +x`, so `VERSION` is updated automatically after checkout/pull.  
+  Release steps are in [AGENTS.md](AGENTS.md#releasing-eg-101).
 
 ## API (generate.php)
 
