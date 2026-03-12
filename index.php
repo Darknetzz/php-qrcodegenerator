@@ -260,7 +260,7 @@ $defaultText = 'https://example.com';
           <input type="text" id="module-labels" placeholder="e.g. Phone number" autocomplete="off">
           <div class="modal-actions">
             <button type="button" class="btn btn-secondary" id="btn-cancel-module">Cancel</button>
-            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="submit" class="btn btn-primary" id="btn-module-submit">Add</button>
           </div>
         </form>
       </div>
@@ -659,7 +659,9 @@ $defaultText = 'https://example.com';
     var iconEl = document.getElementById('module-icon');
     var formatEl = document.getElementById('module-format');
     var labelsEl = document.getElementById('module-labels');
+    var submitBtn = document.getElementById('btn-module-submit');
     if (titleEl) titleEl.textContent = 'Edit custom module';
+    if (submitBtn) submitBtn.textContent = 'Save';
     if (editIdEl) editIdEl.value = m.id;
     if (nameEl) nameEl.value = m.name || '';
     if (iconEl) iconEl.value = m.icon || '';
@@ -676,6 +678,8 @@ $defaultText = 'https://example.com';
     if (!modal || !addForm || !btnAdd) return;
     function show() {
       if (titleEl) titleEl.textContent = 'Add custom module';
+      var submitBtn = document.getElementById('btn-module-submit');
+      if (submitBtn) submitBtn.textContent = 'Add';
       var editIdEl = document.getElementById('module-edit-id');
       if (editIdEl) editIdEl.value = '';
       addForm.reset();
