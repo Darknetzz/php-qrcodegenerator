@@ -1,16 +1,28 @@
 <?php
 /**
- * Update check (GitHub releases) and upgrade (git pull) endpoint.
- * Returns JSON. Optional: set UPDATE_SECRET in env or a .env to require ?secret= for upgrade.
+ * Update check (GitHub releases) and upgrade (git pull or release page) endpoint.
+ * Works for both git clones and zip installs. Optional: set UPDATE_SECRET in env for upgrade.
  *
- * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl }
- * POST ?action=upgrade [&secret=...] → { success, output, error }
+ * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
+ * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
+ *
+ * Zip installs: repo from update-config.php (UPDATE_REPO = 'owner/repo') or default. Version from VERSION file.
  */
 header('Content-Type: application/json; charset=utf-8');
 
 $repoRoot = realpath(__DIR__);
-if ($repoRoot === false || !is_dir($repoRoot . '/.git')) {
-    json_exit(['error' => 'Not a git repository'], 500);
+if ($repoRoot === false) {
+    json_exit(['error' => 'Invalid app root'], 500);
+}
+
+$isGit = is_dir($repoRoot . '/.git');
+
+/** Default repo when not git (e.g. zip install). Override in update-config.php with define('UPDATE_REPO', 'owner/repo'); */
+if (!defined('UPDATE_REPO')) {
+    define('UPDATE_REPO', 'Darknetzz/php-qrcodegenerator');
+}
+if (is_file($repoRoot . '/update-config.php')) {
+    require_once $repoRoot . '/update-config.php';
 }
 
 /** Parse origin URL from .git/config → [owner, repo] for GitHub, or null */
@@ -34,14 +46,22 @@ function get_github_repo(string $repoRoot): ?array {
     return null;
 }
 
-/** Current version string from git (tag or short hash) */
-function get_local_version(string $repoRoot): string {
-    $cmd = sprintf(
-        'cd %s && git describe --tags --always 2>/dev/null || git rev-parse --short HEAD 2>/dev/null',
-        escapeshellarg($repoRoot)
-    );
-    $out = @shell_exec($cmd);
-    return $out !== null ? trim($out) : 'unknown';
+/** Current version: from git if available, else from VERSION file in repo root */
+function get_local_version(string $repoRoot, bool $isGit): string {
+    if ($isGit) {
+        $cmd = sprintf(
+            'cd %s && git describe --tags --always 2>/dev/null || git rev-parse --short HEAD 2>/dev/null',
+            escapeshellarg($repoRoot)
+        );
+        $out = @shell_exec($cmd);
+        return $out !== null ? trim($out) : 'unknown';
+    }
+    $versionFile = $repoRoot . '/VERSION';
+    if (is_file($versionFile) && is_readable($versionFile)) {
+        $v = trim((string) file_get_contents($versionFile));
+        return $v !== '' ? $v : 'unknown';
+    }
+    return 'unknown';
 }
 
 /** Fetch latest release from GitHub API; fallback to latest tag. Returns [tag_name, html_url] or null */
@@ -108,11 +128,26 @@ function upgrade_allowed(): bool {
     return $given !== '' && hash_equals($secret, $given);
 }
 
+/** Resolve [owner, repo] for GitHub API: from git config or from UPDATE_REPO (e.g. zip install) */
+function resolve_repo(string $repoRoot, bool $isGit): ?array {
+    if ($isGit) {
+        return get_github_repo($repoRoot);
+    }
+    if (!defined('UPDATE_REPO') || UPDATE_REPO === '') {
+        return null;
+    }
+    $slug = preg_replace('/\s+/', '', (string) UPDATE_REPO);
+    if (preg_match('#^([^/]+)/([^/]+)$#', $slug, $m)) {
+        return [$m[1], $m[2]];
+    }
+    return null;
+}
+
 $action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
 
 if ($action === 'check') {
-    $current = get_local_version($repoRoot);
-    $github = get_github_repo($repoRoot);
+    $current = get_local_version($repoRoot, $isGit);
+    $github = resolve_repo($repoRoot, $isGit);
     $latestVersion = null;
     $releaseUrl = null;
     $updateAvailable = false;
@@ -131,6 +166,7 @@ if ($action === 'check') {
         'latestVersion' => $latestVersion,
         'updateAvailable' => $updateAvailable,
         'releaseUrl' => $releaseUrl,
+        'installType' => $isGit ? 'git' : 'zip',
     ]);
 }
 
