@@ -182,6 +182,7 @@ $defaultText = 'https://example.com';
       background: var(--accent-hover);
       color: #fff;
     }
+    .btn-icon { width: 1.1em; height: 1.1em; margin-right: 0.4rem; flex-shrink: 0; }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -282,6 +283,7 @@ $defaultText = 'https://example.com';
       <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
       <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.65 0-.43-.18-.84-.44-1.12-.29-.29-.44-.65-.44-1.12a1.65 1.65 0 0 1 1.65-1.65H20c0-1.1-.74-2.07-1.76-2.41a7 7 0 0 0-.38-2.07C17.07 3.3 14.93 2 12 2z"/></symbol>
       <symbol id="icon-size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
     </defs>
   </svg>
   <div class="wrap">
@@ -434,8 +436,8 @@ $defaultText = 'https://example.com';
         </div>
         <div class="actions">
           <div class="btn-group">
-            <a id="dl-png" class="btn btn-primary" href="#" download="qrcode.png">Download PNG</a>
-            <a id="dl-svg" class="btn btn-secondary" href="#" download="qrcode.svg">Download SVG</a>
+            <a id="dl-png" class="btn btn-primary" href="#" download="qrcode.png"><svg class="btn-icon" aria-hidden="true"><use href="#icon-download"/></svg>Download PNG</a>
+            <a id="dl-svg" class="btn btn-secondary" href="#" download="qrcode.svg"><svg class="btn-icon" aria-hidden="true"><use href="#icon-download"/></svg>Download SVG</a>
           </div>
         </div>
       </div>
