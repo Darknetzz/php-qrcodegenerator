@@ -4,7 +4,18 @@ A self-contained QR code generator that runs on any Apache or Nginx server with 
 
 ## Features
 
-- **Content**: URLs, plain text, vCard data, or any string.
+- **Presets**: Choose a content type and fill in the form; the correct QR payload is built for you.
+  - **URL** – Website link
+  - **Wi‑Fi** – Network name (SSID), password, encryption (None / WPA-WPA2 / WEP), hidden network
+  - **vCard** – Contact (name, organization, phone, email)
+  - **Text** – Plain text
+  - **Email** – mailto with optional subject and body
+  - **SMS** – smsto with number and optional message
+  - **Bitcoin** – Address with optional amount and label
+  - **Facebook** – Page or profile URL
+  - **PDF / MP3 / Image** – Link to file (URL)
+  - **App Store** – Link to app (iOS/Android store URL)
+  - **Custom** – Raw string (e.g. your own vCard or URL)
 - **Customization**: Module size, margin, error correction (L/M/Q/H), foreground and background colors.
 - **Preview**: Live preview as you type.
 - **Download**: PNG and SVG.

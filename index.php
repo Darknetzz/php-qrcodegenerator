@@ -192,6 +192,38 @@ $defaultText = 'https://example.com';
       font-size: 0.8rem;
     }
     .foot a { color: var(--accent); }
+
+    .preset-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .preset-tab {
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .preset-tab:hover { color: var(--text); border-color: var(--muted); }
+    .preset-tab.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(34, 197, 94, 0.1);
+    }
+    .preset-tab.wifi { border-color: var(--accent); }
+    .preset-panel { display: none; }
+    .preset-panel.active { display: block; }
+    .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .checkbox-row input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
+    .checkbox-row label { margin: 0; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -202,9 +234,102 @@ $defaultText = 'https://example.com';
     <div class="grid">
       <div class="panel">
         <h2>Content &amp; options</h2>
+        <div class="preset-tabs" role="tablist" aria-label="QR code type">
+          <button type="button" class="preset-tab" data-preset="url" role="tab">URL</button>
+          <button type="button" class="preset-tab wifi active" data-preset="wifi" role="tab">Wi‑Fi</button>
+          <button type="button" class="preset-tab" data-preset="vcard" role="tab">vCard</button>
+          <button type="button" class="preset-tab" data-preset="text" role="tab">Text</button>
+          <button type="button" class="preset-tab" data-preset="email" role="tab">Email</button>
+          <button type="button" class="preset-tab" data-preset="sms" role="tab">SMS</button>
+          <button type="button" class="preset-tab" data-preset="bitcoin" role="tab">Bitcoin</button>
+          <button type="button" class="preset-tab" data-preset="facebook" role="tab">Facebook</button>
+          <button type="button" class="preset-tab" data-preset="pdf" role="tab">PDF</button>
+          <button type="button" class="preset-tab" data-preset="mp3" role="tab">MP3</button>
+          <button type="button" class="preset-tab" data-preset="appstore" role="tab">App Store</button>
+          <button type="button" class="preset-tab" data-preset="image" role="tab">Image</button>
+          <button type="button" class="preset-tab" data-preset="custom" role="tab">Custom</button>
+        </div>
         <form id="qr-form" method="get" action="">
-          <label for="text">Content (URL, text, vCard, etc.)</label>
-          <textarea id="text" name="text" placeholder="https://example.com"><?php echo htmlspecialchars($defaultText); ?></textarea>
+          <div id="preset-url" class="preset-panel">
+            <label for="url">Website URL</label>
+            <input type="url" id="url" placeholder="https://example.com" value="https://example.com">
+          </div>
+          <div id="preset-wifi" class="preset-panel active">
+            <label for="wifi-ssid">Network name (SSID)</label>
+            <input type="text" id="wifi-ssid" placeholder="MyNetwork" autocomplete="off">
+            <div class="checkbox-row">
+              <input type="checkbox" id="wifi-hidden" aria-describedby="wifi-hidden-desc">
+              <label for="wifi-hidden" id="wifi-hidden-desc">Hidden network</label>
+            </div>
+            <label for="wifi-password">Password</label>
+            <input type="text" id="wifi-password" placeholder="Leave empty for open networks" autocomplete="off">
+            <label for="wifi-encryption">Encryption</label>
+            <select id="wifi-encryption">
+              <option value="nopass">None (open)</option>
+              <option value="WPA" selected>WPA / WPA2</option>
+              <option value="WEP">WEP</option>
+            </select>
+          </div>
+          <div id="preset-vcard" class="preset-panel">
+            <label for="vcard-name">Full name</label>
+            <input type="text" id="vcard-name" placeholder="John Doe">
+            <label for="vcard-org">Organization</label>
+            <input type="text" id="vcard-org" placeholder="Company">
+            <label for="vcard-tel">Phone</label>
+            <input type="tel" id="vcard-tel" placeholder="+1 234 567 8900">
+            <label for="vcard-email">Email</label>
+            <input type="email" id="vcard-email" placeholder="john@example.com">
+          </div>
+          <div id="preset-text" class="preset-panel">
+            <label for="text">Plain text</label>
+            <textarea id="text" name="text" placeholder="Enter any text..."></textarea>
+          </div>
+          <div id="preset-email" class="preset-panel">
+            <label for="email-addr">Email address</label>
+            <input type="email" id="email-addr" placeholder="you@example.com">
+            <label for="email-subject">Subject</label>
+            <input type="text" id="email-subject" placeholder="Optional">
+            <label for="email-body">Body</label>
+            <textarea id="email-body" placeholder="Optional" rows="3"></textarea>
+          </div>
+          <div id="preset-sms" class="preset-panel">
+            <label for="sms-number">Phone number</label>
+            <input type="tel" id="sms-number" placeholder="+1234567890">
+            <label for="sms-message">Message</label>
+            <textarea id="sms-message" placeholder="Pre-filled message (optional)" rows="3"></textarea>
+          </div>
+          <div id="preset-bitcoin" class="preset-panel">
+            <label for="btc-address">Bitcoin address</label>
+            <input type="text" id="btc-address" placeholder="bc1q... or 1...">
+            <label for="btc-amount">Amount (BTC, optional)</label>
+            <input type="text" id="btc-amount" placeholder="0.01">
+            <label for="btc-label">Label (optional)</label>
+            <input type="text" id="btc-label" placeholder="Payment for...">
+          </div>
+          <div id="preset-facebook" class="preset-panel">
+            <label for="facebook-url">Facebook page or profile URL</label>
+            <input type="url" id="facebook-url" placeholder="https://www.facebook.com/...">
+          </div>
+          <div id="preset-pdf" class="preset-panel">
+            <label for="pdf-url">Link to PDF file</label>
+            <input type="url" id="pdf-url" placeholder="https://example.com/document.pdf">
+          </div>
+          <div id="preset-mp3" class="preset-panel">
+            <label for="mp3-url">Link to audio file (MP3, etc.)</label>
+            <input type="url" id="mp3-url" placeholder="https://example.com/audio.mp3">
+          </div>
+          <div id="preset-appstore" class="preset-panel">
+            <label for="appstore-url">App store or play store URL</label>
+            <input type="url" id="appstore-url" placeholder="https://apps.apple.com/... or https://play.google.com/...">
+          </div>
+          <div id="preset-image" class="preset-panel">
+            <label for="image-url">Link to image</label>
+            <input type="url" id="image-url" placeholder="https://example.com/image.png">
+          </div>
+          <div id="preset-custom" class="preset-panel">
+            <label for="custom-text">Raw content (URL, vCard, or any string)</label>
+            <textarea id="custom-text" placeholder="Paste or type any content to encode"></textarea>
+          </div>
 
           <div class="row">
             <div class="field">
@@ -266,7 +391,6 @@ $defaultText = 'https://example.com';
   <script>
 (function() {
   var form = document.getElementById('qr-form');
-  var text = document.getElementById('text');
   var size = document.getElementById('size');
   var margin = document.getElementById('margin');
   var level = document.getElementById('level');
@@ -278,6 +402,27 @@ $defaultText = 'https://example.com';
   var placeholder = document.getElementById('preview-placeholder');
   var dlPng = document.getElementById('dl-png');
   var dlSvg = document.getElementById('dl-svg');
+
+  var currentPreset = 'wifi';
+  var tabButtons = document.querySelectorAll('.preset-tab');
+  var panels = document.querySelectorAll('.preset-panel');
+
+  function setPreset(id) {
+    currentPreset = id;
+    tabButtons.forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-preset') === id);
+    });
+    panels.forEach(function(panel) {
+      panel.classList.toggle('active', panel.id === 'preset-' + id);
+    });
+    update();
+  }
+
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setPreset(btn.getAttribute('data-preset'));
+    });
+  });
 
   function hexFromInput(val) {
     val = (val || '').trim();
@@ -299,8 +444,91 @@ $defaultText = 'https://example.com';
   fgColor.addEventListener('input', function() { fg.value = fgColor.value; update(); });
   bgColor.addEventListener('input', function() { bg.value = bgColor.value; update(); });
 
+  function escapeWifiField(s) {
+    return (s || '').toString().replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/:/g, '\\:').replace(/"/g, '\\"');
+  }
+
+  function buildPayload() {
+    var v = function(id) { return (document.getElementById(id) && document.getElementById(id).value) || ''; };
+    var trim = function(s) { return (s || '').trim(); };
+    switch (currentPreset) {
+      case 'url':
+        return trim(v('url')) || '';
+      case 'wifi': {
+        var ssid = trim(v('wifi-ssid'));
+        if (!ssid) return '';
+        var enc = v('wifi-encryption');
+        var pass = v('wifi-password');
+        var hidden = document.getElementById('wifi-hidden') && document.getElementById('wifi-hidden').checked;
+        var parts = ['WIFI:T:' + enc + ';S:' + escapeWifiField(ssid)];
+        if (enc !== 'nopass' && pass !== undefined) parts.push('P:' + escapeWifiField(pass));
+        if (hidden) parts.push('H:true');
+        parts.push(';;');
+        return parts.join(';');
+      }
+      case 'vcard': {
+        var name = trim(v('vcard-name'));
+        if (!name) return '';
+        var org = trim(v('vcard-org'));
+        var tel = trim(v('vcard-tel'));
+        var email = trim(v('vcard-email'));
+        var lines = ['BEGIN:VCARD', 'VERSION:3.0', 'FN:' + name, 'N:' + name];
+        if (org) lines.push('ORG:' + org);
+        if (tel) lines.push('TEL:' + tel);
+        if (email) lines.push('EMAIL:' + email);
+        lines.push('END:VCARD');
+        return lines.join("\r\n");
+      }
+      case 'text':
+        return trim(v('text')) || '';
+      case 'email': {
+        var addr = trim(v('email-addr'));
+        if (!addr) return '';
+        var subj = trim(v('email-subject'));
+        var body = trim(v('email-body'));
+        var mailto = 'mailto:' + encodeURIComponent(addr);
+        var params = [];
+        if (subj) params.push('subject=' + encodeURIComponent(subj));
+        if (body) params.push('body=' + encodeURIComponent(body));
+        if (params.length) mailto += '?' + params.join('&');
+        return mailto;
+      }
+      case 'sms': {
+        var num = trim(v('sms-number'));
+        if (!num) return '';
+        var msg = trim(v('sms-message'));
+        return 'smsto:' + num + (msg ? ':' + msg : '');
+      }
+      case 'bitcoin': {
+        var addr = trim(v('btc-address'));
+        if (!addr) return '';
+        var amount = trim(v('btc-amount'));
+        var label = trim(v('btc-label'));
+        var btc = 'bitcoin:' + addr;
+        var q = [];
+        if (amount) q.push('amount=' + encodeURIComponent(amount));
+        if (label) q.push('label=' + encodeURIComponent(label));
+        if (q.length) btc += '?' + q.join('&');
+        return btc;
+      }
+      case 'facebook':
+        return trim(v('facebook-url')) || '';
+      case 'pdf':
+        return trim(v('pdf-url')) || '';
+      case 'mp3':
+        return trim(v('mp3-url')) || '';
+      case 'appstore':
+        return trim(v('appstore-url')) || '';
+      case 'image':
+        return trim(v('image-url')) || '';
+      case 'custom':
+      default:
+        return trim(v('custom-text')) || '';
+    }
+  }
+
   function buildParams() {
-    var t = (text.value || '').trim();
+    var t = buildPayload();
     var fgVal = hexFromInput(fg.value) || '#000000';
     var bgVal = hexFromInput(bg.value) || '#ffffff';
     return {
@@ -345,12 +573,28 @@ $defaultText = 'https://example.com';
     dlSvg.href = buildUrl('svg', true);
   }
 
-  [text, size, margin, level, fg, bg].forEach(function(el) {
-    el.addEventListener('input', update);
-    el.addEventListener('change', update);
+  var presetInputs = [
+    'url', 'wifi-ssid', 'wifi-password', 'wifi-encryption', 'wifi-hidden',
+    'vcard-name', 'vcard-org', 'vcard-tel', 'vcard-email',
+    'text', 'email-addr', 'email-subject', 'email-body',
+    'sms-number', 'sms-message', 'btc-address', 'btc-amount', 'btc-label',
+    'facebook-url', 'pdf-url', 'mp3-url', 'appstore-url', 'image-url', 'custom-text'
+  ];
+  presetInputs.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    }
+  });
+  [size, margin, level, fg, bg].forEach(function(el) {
+    if (el) {
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
+    }
   });
 
-  update();
+  setPreset('wifi');
 })();
   </script>
 </body>
