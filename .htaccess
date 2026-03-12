@@ -3,6 +3,11 @@
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Redirect HTTP to HTTPS (disable if you don't have SSL on this server)
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
     # Optional: redirect / to index.php if not already
     DirectoryIndex index.php
 </IfModule>
