@@ -218,7 +218,6 @@ $defaultText = 'https://example.com';
       border-color: var(--accent);
       background: rgba(34, 197, 94, 0.1);
     }
-    .preset-tab.wifi { border-color: var(--accent); }
     .preset-panel { display: none; }
     .preset-panel.active { display: block; }
     .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
@@ -236,9 +235,9 @@ $defaultText = 'https://example.com';
         <h2>Content &amp; options</h2>
         <div class="preset-tabs" role="tablist" aria-label="QR code type">
           <button type="button" class="preset-tab" data-preset="url" role="tab">URL</button>
-          <button type="button" class="preset-tab wifi active" data-preset="wifi" role="tab">Wi‑Fi</button>
+          <button type="button" class="preset-tab" data-preset="wifi" role="tab">Wi‑Fi</button>
           <button type="button" class="preset-tab" data-preset="vcard" role="tab">vCard</button>
-          <button type="button" class="preset-tab" data-preset="text" role="tab">Text</button>
+          <button type="button" class="preset-tab active" data-preset="text" role="tab">Text</button>
           <button type="button" class="preset-tab" data-preset="email" role="tab">Email</button>
           <button type="button" class="preset-tab" data-preset="sms" role="tab">SMS</button>
           <button type="button" class="preset-tab" data-preset="bitcoin" role="tab">Bitcoin</button>
@@ -254,7 +253,7 @@ $defaultText = 'https://example.com';
             <label for="url">Website URL</label>
             <input type="url" id="url" placeholder="https://example.com" value="https://example.com" autocomplete="off">
           </div>
-          <div id="preset-wifi" class="preset-panel active">
+          <div id="preset-wifi" class="preset-panel">
             <label for="wifi-ssid">Network name (SSID)</label>
             <input type="text" id="wifi-ssid" placeholder="MyNetwork" autocomplete="off">
             <div class="checkbox-row">
@@ -280,7 +279,7 @@ $defaultText = 'https://example.com';
             <label for="vcard-email">Email</label>
             <input type="email" id="vcard-email" placeholder="john@example.com" autocomplete="off">
           </div>
-          <div id="preset-text" class="preset-panel">
+          <div id="preset-text" class="preset-panel active">
             <label for="text">Plain text</label>
             <textarea id="text" name="text" placeholder="Enter any text..." autocomplete="off"></textarea>
           </div>
@@ -407,6 +406,9 @@ $defaultText = 'https://example.com';
   var tabButtons = document.querySelectorAll('.preset-tab');
   var panels = document.querySelectorAll('.preset-panel');
 
+  var PRESET_IDS = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+  var STORAGE_KEY = 'qr-preset';
+
   function setPreset(id) {
     currentPreset = id;
     tabButtons.forEach(function(btn) {
@@ -415,6 +417,7 @@ $defaultText = 'https://example.com';
     panels.forEach(function(panel) {
       panel.classList.toggle('active', panel.id === 'preset-' + id);
     });
+    try { sessionStorage.setItem(STORAGE_KEY, id); } catch (e) {}
     update();
   }
 
@@ -594,7 +597,10 @@ $defaultText = 'https://example.com';
     }
   });
 
-  setPreset('wifi');
+  var saved = null;
+  try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
+  var initial = (saved && PRESET_IDS.indexOf(saved) !== -1) ? saved : 'text';
+  setPreset(initial);
 })();
   </script>
 </body>
