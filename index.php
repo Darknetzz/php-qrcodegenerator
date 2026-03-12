@@ -1,6 +1,12 @@
 <?php
 require_once __DIR__ . '/load_config.php';
-require_app_access(realpath(__DIR__));
+$repoRoot = realpath(__DIR__);
+require_app_access($repoRoot);
+$config = load_config($repoRoot);
+$serverCustomModules = json_decode($config['custom_modules'] ?? '[]', true);
+if (!is_array($serverCustomModules)) {
+    $serverCustomModules = [];
+}
 
 $title = 'QR Code Generator';
 $defaultText = 'https://example.com';
@@ -279,6 +285,7 @@ $defaultText = 'https://example.com';
   </div>
   </div>
 
+  <script>window.SERVER_CUSTOM_MODULES = <?php echo json_encode($serverCustomModules); ?>;</script>
   <script>
 (function() {
   var form = document.getElementById('qr-form');
@@ -301,10 +308,12 @@ $defaultText = 'https://example.com';
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
   var hiddenPresetsFromServer = [];
+  var serverModules = window.SERVER_CUSTOM_MODULES || [];
+  var serverModuleIds = serverModules.map(function(m) { return m.id; });
   function getHiddenPresets() {
     return hiddenPresetsFromServer;
   }
-  function getCustomModules() {
+  function getLocalCustomModules() {
     try {
       var raw = localStorage.getItem(CUSTOM_MODULES_KEY);
       if (!raw) return [];
@@ -312,8 +321,17 @@ $defaultText = 'https://example.com';
       return Array.isArray(arr) ? arr : [];
     } catch (e) { return []; }
   }
+  function getCustomModules() {
+    var local = getLocalCustomModules().filter(function(m) {
+      return serverModuleIds.indexOf(m.id) === -1;
+    });
+    return serverModules.concat(local);
+  }
   function setCustomModules(arr) {
-    try { localStorage.setItem(CUSTOM_MODULES_KEY, JSON.stringify(arr)); } catch (e) {}
+    try {
+      var local = arr.filter(function(m) { return serverModuleIds.indexOf(m.id) === -1; });
+      localStorage.setItem(CUSTOM_MODULES_KEY, JSON.stringify(local));
+    } catch (e) {}
   }
   function applyDefaultPresetsVisibility() {
     var hidden = getHiddenPresets();

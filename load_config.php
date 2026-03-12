@@ -104,6 +104,7 @@ function get_default_config(): array {
         'update_secret' => '',
         'admin_secret' => '',
         'hidden_presets' => '[]',
+        'custom_modules' => '[]',
     ];
 }
 

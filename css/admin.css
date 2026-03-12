@@ -180,3 +180,71 @@ body.admin-tab-auth #admin-auth,
 body.admin-tab-modules #admin-modules {
   display: block;
 }
+
+.admin-module-list {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.admin-module-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-module-item:last-child {
+  border-bottom: none;
+}
+
+.admin-module-info {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.admin-module-info code {
+  font-size: 0.85em;
+}
+
+.admin-module-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-module-link {
+  font-size: 0.875rem;
+}
+
+.admin-module-delete-form {
+  display: inline;
+}
+
+.admin-module-delete {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.admin-module-delete:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.admin-module-form-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.admin-module-form .btn {
+  margin-top: 0.75rem;
+}

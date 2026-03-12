@@ -32,12 +32,99 @@ if (!$allowed) {
     exit;
 }
 
+$baseUrl = 'admin.php?key=' . rawurlencode($key);
 $defaultPresetIds = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
 $defaultPresetLabels = ['url' => 'URL', 'wifi' => 'Wi‑Fi', 'vcard' => 'vCard', 'text' => 'Text', 'email' => 'Email', 'sms' => 'SMS', 'bitcoin' => 'Bitcoin', 'facebook' => 'Facebook', 'pdf' => 'PDF', 'mp3' => 'MP3', 'appstore' => 'App Store', 'image' => 'Image', 'custom' => 'Custom'];
+
+$adminModules = json_decode($config['custom_modules'] ?? '[]', true);
+if (!is_array($adminModules)) {
+    $adminModules = [];
+}
+
+$editModule = null;
+if (isset($_GET['edit']) && is_string($_GET['edit']) && $_GET['edit'] !== '') {
+    foreach ($adminModules as $m) {
+        if (isset($m['id']) && $m['id'] === $_GET['edit']) {
+            $editModule = $m;
+            break;
+        }
+    }
+}
 
 $saved = false;
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Module delete
+    if (isset($_POST['delete_module_id']) && is_string($_POST['delete_module_id']) && $_POST['delete_module_id'] !== '') {
+        $toDelete = $_POST['delete_module_id'];
+        $adminModules = array_values(array_filter($adminModules, function ($m) use ($toDelete) {
+            return (isset($m['id']) ? $m['id'] : '') !== $toDelete;
+        }));
+        $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
+        if ($saveResult === true) {
+            header('Location: ' . $baseUrl . '&tab=modules');
+            exit;
+        }
+        $error = is_string($saveResult) ? $saveResult : 'Could not save.';
+    }
+    // Module add or edit
+    elseif (isset($_POST['module_name']) && trim($_POST['module_name']) !== '') {
+        $name = trim($_POST['module_name']);
+        $icon = trim($_POST['module_icon'] ?? '');
+        $format = trim($_POST['module_format'] ?? '');
+        $labelsStr = trim($_POST['module_labels'] ?? '');
+        $editId = isset($_POST['module_edit_id']) ? trim($_POST['module_edit_id']) : '';
+        $numPlaceholders = substr_count($format, '%s');
+        if ($numPlaceholders < 1) {
+            $error = 'Format must contain at least one %s.';
+        } else {
+            $labels = $labelsStr !== '' ? array_map('trim', explode(',', $labelsStr)) : [];
+            while (count($labels) < $numPlaceholders) {
+                $labels[] = 'Field ' . (count($labels) + 1);
+            }
+            $fields = array_slice(array_map(function ($l) {
+                return ['label' => $l, 'placeholder' => ''];
+            }, $labels), 0, $numPlaceholders);
+            if ($error === '') {
+                if ($editId !== '') {
+                    $found = false;
+                    foreach ($adminModules as $i => $m) {
+                        if (isset($m['id']) && $m['id'] === $editId) {
+                            $adminModules[$i] = ['id' => $editId, 'name' => $name, 'icon' => $icon, 'format' => $format, 'fields' => $fields];
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $error = 'Module not found.';
+                    }
+                } else {
+                    $ids = array_filter(array_map(function ($m) {
+                        return isset($m['id']) ? $m['id'] : null;
+                    }, $adminModules));
+                    $n = 1;
+                    while (in_array('custom-' . $n, $ids, true)) {
+                        $n++;
+                    }
+                    $adminModules[] = ['id' => 'custom-' . $n, 'name' => $name, 'icon' => $icon, 'format' => $format, 'fields' => $fields];
+                }
+            }
+            if ($error === '') {
+                $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
+                if ($saveResult === true) {
+                    $config['custom_modules'] = json_encode($adminModules);
+                    header('Location: ' . $baseUrl . '&tab=modules');
+                    exit;
+                }
+                $error = is_string($saveResult) ? $saveResult : 'Could not save.';
+            }
+        }
+        if ($error !== '' && $editId !== '' && isset($fields)) {
+            $editModule = ['id' => $editId, 'name' => $name, 'icon' => $icon, 'format' => $format, 'fields' => array_map(function ($f) {
+                return ['label' => $f['label'] ?? '', 'placeholder' => ''];
+            }, $fields)];
+        }
+    }
     $newPass = trim($_POST['update_auth_password'] ?? '');
     $hiddenPresets = $config['hidden_presets'] ?? '[]';
     if ((isset($_POST['tab']) && $_POST['tab'] === 'modules') || (isset($_GET['tab']) && $_GET['tab'] === 'modules')) {
@@ -74,7 +161,6 @@ $validTabs = ['updates', 'auth', 'modules'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'updates';
 }
-$baseUrl = 'admin.php?key=' . rawurlencode($key);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -155,6 +241,49 @@ $baseUrl = 'admin.php?key=' . rawurlencode($key);
       </section>
 
       <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
+        <div class="panel">
+          <h2>Custom modules</h2>
+          <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
+          <?php if (count($adminModules) > 0) { ?>
+          <ul class="admin-module-list">
+            <?php foreach ($adminModules as $m) {
+                $mid = isset($m['id']) ? $m['id'] : '';
+                $mname = isset($m['name']) ? $m['name'] : '';
+                $mformat = isset($m['format']) ? $m['format'] : '';
+                $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
+            ?>
+            <li class="admin-module-item">
+              <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
+              <span class="admin-module-actions">
+                <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
+                <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
+                  <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+                  <input type="hidden" name="delete_module_id" value="<?php echo htmlspecialchars($mid); ?>">
+                  <button type="submit" class="admin-module-delete">Delete</button>
+                </form>
+              </span>
+            </li>
+            <?php } ?>
+          </ul>
+          <?php } else { ?>
+          <p class="sub">No custom modules yet. Add one below.</p>
+          <?php } ?>
+          <h3 class="admin-module-form-title"><?php echo $editModule ? 'Edit module' : 'Add module'; ?></h3>
+          <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
+          <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
+            <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+            <input type="hidden" name="module_edit_id" value="<?php echo $editModule ? htmlspecialchars($editModule['id'] ?? '') : ''; ?>">
+            <label for="module_name">Name</label>
+            <input type="text" id="module_name" name="module_name" value="<?php echo $editModule ? htmlspecialchars($editModule['name'] ?? '') : ''; ?>" placeholder="e.g. Phone" required autocomplete="off">
+            <label for="module_icon">Icon (optional — emoji or sprite name, e.g. &#x1F4DE; or icon-phone)</label>
+            <input type="text" id="module_icon" name="module_icon" value="<?php echo $editModule ? htmlspecialchars($editModule['icon'] ?? '') : ''; ?>" placeholder="&#x1F4DE; or icon-phone" autocomplete="off">
+            <label for="module_format">Format (use %s for each field)</label>
+            <input type="text" id="module_format" name="module_format" value="<?php echo $editModule ? htmlspecialchars($editModule['format'] ?? '') : ''; ?>" placeholder="tel:%s" required autocomplete="off">
+            <label for="module_labels">Field labels (comma-separated, one per %s)</label>
+            <input type="text" id="module_labels" name="module_labels" value="<?php echo $editModule && !empty($editModule['fields']) ? htmlspecialchars(implode(', ', array_column($editModule['fields'], 'label'))) : ''; ?>" placeholder="e.g. Phone number" autocomplete="off">
+            <button type="submit" class="btn"><?php echo $editModule ? 'Update module' : 'Add module'; ?></button>
+          </form>
+        </div>
         <div class="panel">
           <h2>Default preset tabs</h2>
           <p class="sub">Uncheck presets to hide them from the tab bar for <strong>all users</strong>. Changes apply app-wide. At least one must remain visible.</p>
