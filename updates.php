@@ -5,6 +5,7 @@
  * Access control: IP allowlist, Basic Auth, and upgrade secret are set in admin or config.php.
  *
  * GET  ?action=config-status → { configured } — whether IP/Basic Auth is set; if set, requires auth
+ * POST ?action=save-initial-config → save first-time setup (only when not yet configured)
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
@@ -96,6 +97,35 @@ if ($action === 'config-status') {
         require_updates_access($config);
     }
     json_exit(['configured' => is_access_configured($config)]);
+}
+
+if ($action === 'save-initial-config') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        json_exit(['error' => 'Use POST'], 405);
+    }
+    if (is_access_configured($config)) {
+        json_exit(['error' => 'Already configured'], 400);
+    }
+    $allowlist = trim($_POST['update_ip_allowlist'] ?? '');
+    $useBasic = !empty($_POST['update_use_basic_auth']);
+    $authUser = trim($_POST['update_auth_user'] ?? '');
+    $authPass = trim($_POST['update_auth_password'] ?? '');
+    if ($allowlist === '' && (!$useBasic || $authUser === '' || $authPass === '')) {
+        json_exit(['error' => 'Set at least an IP allowlist or enable Basic Auth with username and password'], 400);
+    }
+    $updates = [
+        'update_repo' => trim($config['update_repo'] ?? ''),
+        'update_ip_allowlist' => $allowlist,
+        'update_use_basic_auth' => $useBasic ? '1' : '0',
+        'update_auth_user' => $authUser,
+        'update_auth_password' => $authPass,
+        'update_secret' => trim($config['update_secret'] ?? ''),
+        'admin_secret' => trim($config['admin_secret'] ?? ''),
+    ];
+    if (!save_config($repoRoot, $updates)) {
+        json_exit(['error' => 'Could not save config'], 500);
+    }
+    json_exit(['success' => true, 'configured' => true]);
 }
 
 if (in_array($action, ['check', 'upgrade'], true)) {

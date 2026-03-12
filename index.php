@@ -37,6 +37,31 @@ $defaultText = 'https://example.com';
       <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></symbol>
     </defs>
   </svg>
+  <div id="onboarding" class="onboarding" aria-labelledby="onboarding-title">
+    <div class="onboarding-inner">
+      <h1 id="onboarding-title">Setup</h1>
+      <p class="sub">Configure access control to continue. You must set either an IP allowlist or a login (Basic Auth).</p>
+      <div id="onboarding-error" class="msg err" style="display:none;"></div>
+      <form id="onboarding-form" class="panel">
+        <label for="setup-ip">IP allowlist (comma-separated)</label>
+        <input type="text" id="setup-ip" name="update_ip_allowlist" placeholder="127.0.0.1, 10.0.0.0/24" autocomplete="off">
+        <p class="hint">Only these IPs can use updates and custom modules. Leave empty if you use login only.</p>
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" id="setup-use-basic" name="update_use_basic_auth" value="1">
+            Require username and password (Basic Auth)
+          </label>
+        </div>
+        <label for="setup-user">Username</label>
+        <input type="text" id="setup-user" name="update_auth_user" placeholder="admin" autocomplete="username">
+        <label for="setup-password">Password</label>
+        <input type="password" id="setup-password" name="update_auth_password" placeholder="" autocomplete="new-password">
+        <p class="hint">Set at least an IP allowlist or enable Basic Auth with username and password.</p>
+        <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Save and continue</button>
+      </form>
+    </div>
+  </div>
+  <div id="app-content" class="hidden">
   <div class="wrap">
     <h1><?php echo htmlspecialchars($title); ?></h1>
     <p class="tagline">Create QR codes for URLs, text, or any content. No sign-up, no tracking.</p>
@@ -230,6 +255,7 @@ $defaultText = 'https://example.com';
       <button type="button" class="btn btn-primary" id="btn-upgrade"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
       <a href="admin.php" class="btn btn-secondary admin-link">Admin</a>
     </div>
+  </div>
   </div>
 
   <script>
@@ -576,6 +602,10 @@ $defaultText = 'https://example.com';
   var checkBtn = document.getElementById('btn-check-updates');
   var upgradeBtn = document.getElementById('btn-upgrade');
   var gateMsgEl = document.getElementById('settings-gate-message');
+  var onboardingEl = document.getElementById('onboarding');
+  var appContentEl = document.getElementById('app-content');
+  var onboardingForm = document.getElementById('onboarding-form');
+  var onboardingError = document.getElementById('onboarding-error');
 
   function setMsg(text, className) {
     msgEl.textContent = text || '';
@@ -595,10 +625,24 @@ $defaultText = 'https://example.com';
     });
   }
 
+  function showOnboarding() {
+    if (onboardingEl) onboardingEl.classList.add('visible');
+    if (appContentEl) appContentEl.classList.add('hidden');
+  }
+
+  function showApp() {
+    if (onboardingEl) onboardingEl.classList.remove('visible');
+    if (appContentEl) appContentEl.classList.remove('hidden');
+    setGateMessage('');
+    setGatedVisible(true);
+    loadVersion();
+  }
+
   function applyConfigStatus() {
     fetch('updates.php?action=config-status', { credentials: 'include' })
       .then(function(r) {
         if (r.status === 401 || r.status === 403) {
+          showApp();
           setGatedVisible(false);
           setGateMessage(
             'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
@@ -616,23 +660,58 @@ $defaultText = 'https://example.com';
       })
       .then(function(d) {
         if (d === undefined) return;
-        setGatedVisible(true);
         if (d.configured) {
-          setGateMessage('');
+          showApp();
         } else {
-          setGateMessage(
-            'First-time setup: configure <strong>IP allowlist</strong> or <strong>login</strong> in Admin to protect updates and custom modules. ' +
-            '<a href="admin.php">Open Admin</a>.',
-            'setup'
-          );
+          showOnboarding();
         }
-        loadVersion();
       })
       .catch(function() {
-        setGatedVisible(true);
-        setGateMessage('');
-        loadVersion();
+        showApp();
       });
+  }
+
+  if (onboardingForm) {
+    onboardingForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (onboardingError) {
+        onboardingError.style.display = 'none';
+        onboardingError.textContent = '';
+      }
+      var useBasic = document.getElementById('setup-use-basic') && document.getElementById('setup-use-basic').checked;
+      var ip = (document.getElementById('setup-ip') && document.getElementById('setup-ip').value || '').trim();
+      var user = (document.getElementById('setup-user') && document.getElementById('setup-user').value || '').trim();
+      var pass = (document.getElementById('setup-password') && document.getElementById('setup-password').value || '').trim();
+      if (ip === '' && (!useBasic || user === '' || pass === '')) {
+        if (onboardingError) {
+          onboardingError.textContent = 'Set at least an IP allowlist or enable Basic Auth with username and password.';
+          onboardingError.style.display = 'block';
+        }
+        return;
+      }
+      var formData = new FormData(onboardingForm);
+      formData.append('action', 'save-initial-config');
+      fetch('updates.php', { method: 'POST', body: formData, credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+        .then(function(res) {
+          if (res.status >= 400 && res.data && res.data.error) {
+            if (onboardingError) {
+              onboardingError.textContent = res.data.error;
+              onboardingError.style.display = 'block';
+            }
+            return;
+          }
+          if (res.data && res.data.success) {
+            showApp();
+          }
+        })
+        .catch(function() {
+          if (onboardingError) {
+            onboardingError.textContent = 'Save failed. Try again.';
+            onboardingError.style.display = 'block';
+          }
+        });
+    });
   }
 
   function loadVersion() {
