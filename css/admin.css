@@ -131,3 +131,52 @@ input[type="checkbox"] {
   background: rgba(248, 113, 113, 0.2);
   color: #f87171;
 }
+
+/* Admin subpage pills */
+.admin-pills {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-pill {
+  display: inline-block;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.admin-pill:hover {
+  color: var(--text);
+  background: var(--input-bg);
+}
+
+.admin-pill.is-active {
+  color: #000;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.admin-pill.is-active:hover {
+  color: #000;
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+/* Show only the active section */
+.admin-section {
+  display: none;
+}
+
+body.admin-tab-updates #admin-updates,
+body.admin-tab-auth #admin-auth,
+body.admin-tab-modules #admin-modules {
+  display: block;
+}
