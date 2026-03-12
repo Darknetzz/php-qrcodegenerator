@@ -58,9 +58,14 @@ function get_local_version(string $repoRoot, bool $isGit): string {
     }
     $versionFile = $repoRoot . '/VERSION';
     if (is_file($versionFile) && is_readable($versionFile)) {
-        $firstLine = strtok(file_get_contents($versionFile), "\n");
-        $v = $firstLine !== false ? trim($firstLine) : '';
-        return $v !== '' ? $v : 'unknown';
+        $raw = @file_get_contents($versionFile);
+        if ($raw !== false) {
+            $firstLine = strtok($raw, "\n");
+            $v = $firstLine !== false ? trim($firstLine) : '';
+            if ($v !== '' && $v[0] !== '#') {
+                return $v;
+            }
+        }
     }
     return 'unknown';
 }
