@@ -46,7 +46,21 @@ function get_github_repo(string $repoRoot): ?array {
     return null;
 }
 
-/** Current version: from git if available, else from VERSION file in repo root */
+/** Normalize git describe to "1.0.0" on tag or "1.0.0-<shortcommit>" when not on a tag */
+function normalize_git_version(string $describe): string {
+    $describe = trim($describe);
+    if ($describe === '') {
+        return 'unknown';
+    }
+    $describe = preg_replace('/^v/i', '', $describe);
+    // v1.0.0-2-gabc1234 → 1.0.0-abc1234
+    if (preg_match('/^(.+)-(\d+)-g([a-f0-9]+)$/i', $describe, $m)) {
+        return $m[1] . '-' . $m[3];
+    }
+    return $describe;
+}
+
+/** Current version: from git if available (1.0.0 or 1.0.0-<commit>), else from VERSION file */
 function get_local_version(string $repoRoot, bool $isGit): string {
     if ($isGit) {
         $cmd = sprintf(
@@ -54,7 +68,7 @@ function get_local_version(string $repoRoot, bool $isGit): string {
             escapeshellarg($repoRoot)
         );
         $out = @shell_exec($cmd);
-        return $out !== null ? trim($out) : 'unknown';
+        return $out !== null ? normalize_git_version(trim($out)) : 'unknown';
     }
     $versionFile = $repoRoot . '/VERSION';
     if (is_file($versionFile) && is_readable($versionFile)) {
