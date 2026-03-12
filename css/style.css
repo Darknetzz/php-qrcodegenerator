@@ -75,6 +75,7 @@ input[type="number"],
 input[type="url"],
 input[type="email"],
 input[type="tel"],
+input[type="password"],
 textarea {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -96,6 +97,7 @@ input[type="number"]:focus,
 input[type="url"]:focus,
 input[type="email"]:focus,
 input[type="tel"]:focus,
+input[type="password"]:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -403,6 +405,15 @@ label { display: flex; align-items: center; }
   color: var(--muted);
   font-size: 0.8rem;
   margin-top: 0.25rem;
+}
+
+.setup-basic-fields {
+  display: none;
+  margin-top: 0.75rem;
+}
+
+.setup-basic-fields.visible {
+  display: block;
 }
 
 .onboarding .msg.err {

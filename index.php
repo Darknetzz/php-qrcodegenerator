@@ -52,10 +52,12 @@ $defaultText = 'https://example.com';
             Require username and password (Basic Auth)
           </label>
         </div>
-        <label for="setup-user">Username</label>
-        <input type="text" id="setup-user" name="update_auth_user" placeholder="admin" autocomplete="username">
-        <label for="setup-password">Password</label>
-        <input type="password" id="setup-password" name="update_auth_password" placeholder="" autocomplete="new-password">
+        <div id="setup-basic-auth-fields" class="setup-basic-fields">
+          <label for="setup-user">Username</label>
+          <input type="text" id="setup-user" name="update_auth_user" placeholder="admin" autocomplete="username">
+          <label for="setup-password">Password</label>
+          <input type="password" id="setup-password" name="update_auth_password" placeholder="" autocomplete="new-password">
+        </div>
         <p class="hint">Set at least an IP allowlist or enable Basic Auth with username and password.</p>
         <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Save and continue</button>
       </form>
@@ -670,6 +672,17 @@ $defaultText = 'https://example.com';
         showApp();
       });
   }
+
+  (function setupBasicAuthToggle() {
+    var useBasicCb = document.getElementById('setup-use-basic');
+    var basicFields = document.getElementById('setup-basic-auth-fields');
+    if (!useBasicCb || !basicFields) return;
+    function toggle() {
+      basicFields.classList.toggle('visible', useBasicCb.checked);
+    }
+    useBasicCb.addEventListener('change', toggle);
+    toggle();
+  })();
 
   if (onboardingForm) {
     onboardingForm.addEventListener('submit', function(e) {
