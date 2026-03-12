@@ -1,0 +1,3 @@
+#!/bin/sh
+# Copy to .git/hooks/post-commit and chmod +x to keep VERSION in sync after each commit.
+exec php "$(git rev-parse --show-toplevel)/update-version.php"
