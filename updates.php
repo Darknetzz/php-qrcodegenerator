@@ -99,7 +99,9 @@ if ($action === 'config-status') {
     if (is_access_configured($config)) {
         require_updates_access($config);
     }
-    json_exit(['configured' => is_access_configured($config)]);
+    $configured = is_access_configured($config);
+    $loggedIn = !empty($_SESSION['qr_authenticated']);
+    json_exit(['configured' => $configured, 'loggedIn' => $loggedIn]);
 }
 
 if ($action === 'save-initial-config') {

@@ -707,7 +707,7 @@ $defaultText = 'https://example.com';
         var btnLogout = document.getElementById('btn-logout');
         if (d.configured) {
           showApp();
-          if (btnLogout) btnLogout.style.display = '';
+          if (btnLogout) btnLogout.style.display = (d.loggedIn ? '' : 'none');
         } else {
           showOnboarding();
           if (btnLogout) btnLogout.style.display = 'none';
@@ -867,19 +867,19 @@ $defaultText = 'https://example.com';
       .finally(function() { upgradeBtn.disabled = false; });
   });
 
-  var btnLogout = document.getElementById('btn-logout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function() {
-      var btn = this;
-      btn.disabled = true;
-      var fd = new FormData();
-      fd.append('action', 'logout');
-      fetch('updates.php?action=logout', { method: 'POST', body: fd, credentials: 'include' })
-        .then(function() { applyConfigStatus(); })
-        .catch(function() { applyConfigStatus(); })
-        .finally(function() { btn.disabled = false; });
-    });
-  }
+  document.addEventListener('click', function(e) {
+    var btn = e.target && e.target.closest ? e.target.closest('#btn-logout') : null;
+    if (!btn) return;
+    e.preventDefault();
+    if (btn.disabled) return;
+    btn.disabled = true;
+    var fd = new FormData();
+    fd.append('action', 'logout');
+    fetch('updates.php?action=logout', { method: 'POST', body: fd, credentials: 'include' })
+      .then(function() { applyConfigStatus(); })
+      .catch(function() { applyConfigStatus(); })
+      .finally(function() { btn.disabled = false; });
+  });
 
   applyConfigStatus();
 })();
