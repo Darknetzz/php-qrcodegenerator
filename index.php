@@ -431,30 +431,33 @@ $defaultText = 'https://example.com';
       tab.setAttribute('role', 'tab');
       renderCustomModuleIcon(tab, m.icon);
       tab.appendChild(document.createTextNode(m.name));
-      var editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = 'preset-tab-custom-edit';
-      editBtn.setAttribute('aria-label', 'Edit ' + m.name);
-      editBtn.textContent = '\u270e';
-      editBtn.addEventListener('click', function(ev) {
-        ev.stopPropagation();
-        openModuleModalForEdit(m);
-      });
-      var delBtn = document.createElement('button');
-      delBtn.type = 'button';
-      delBtn.className = 'preset-tab-custom-del';
-      delBtn.setAttribute('aria-label', 'Remove ' + m.name);
-      delBtn.textContent = '\u00d7';
-      delBtn.addEventListener('click', function(ev) {
-        ev.stopPropagation();
-        var mods = getCustomModules().filter(function(x) { return x.id !== m.id; });
-        setCustomModules(mods);
-        renderCustomModules();
-        if (currentPreset === m.id) setPreset('text');
-      });
       wrap.appendChild(tab);
-      wrap.appendChild(editBtn);
-      wrap.appendChild(delBtn);
+      var isServerModule = serverModuleIds.indexOf(m.id) !== -1;
+      if (!isServerModule) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'preset-tab-custom-edit';
+        editBtn.setAttribute('aria-label', 'Edit ' + m.name);
+        editBtn.textContent = '\u270e';
+        editBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          openModuleModalForEdit(m);
+        });
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'preset-tab-custom-del';
+        delBtn.setAttribute('aria-label', 'Remove ' + m.name);
+        delBtn.textContent = '\u00d7';
+        delBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          var mods = getCustomModules().filter(function(x) { return x.id !== m.id; });
+          setCustomModules(mods);
+          renderCustomModules();
+          if (currentPreset === m.id) setPreset('text');
+        });
+        wrap.appendChild(editBtn);
+        wrap.appendChild(delBtn);
+      }
       tabsContainer.appendChild(wrap);
       var panel = document.createElement('div');
       panel.id = 'preset-' + m.id;

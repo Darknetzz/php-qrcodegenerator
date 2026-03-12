@@ -125,27 +125,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }, $fields)];
         }
     }
+    $fromPresetsForm = isset($_POST['visible_presets']) && is_array($_POST['visible_presets']) && !isset($_POST['update_repo']);
     $newPass = trim($_POST['update_auth_password'] ?? '');
     $hiddenPresets = $config['hidden_presets'] ?? '[]';
-    if ((isset($_POST['tab']) && $_POST['tab'] === 'modules') || (isset($_GET['tab']) && $_GET['tab'] === 'modules')) {
+    if ($fromPresetsForm || (isset($_POST['tab']) && $_POST['tab'] === 'modules') || (isset($_GET['tab']) && $_GET['tab'] === 'modules')) {
         $visible = isset($_POST['visible_presets']) && is_array($_POST['visible_presets']) ? $_POST['visible_presets'] : [];
         $hidden = array_values(array_diff($defaultPresetIds, $visible));
         if (count($hidden) < count($defaultPresetIds)) {
             $hiddenPresets = json_encode($hidden);
         }
     }
-    $updates = [
-        'update_repo' => trim($_POST['update_repo'] ?? ''),
-        'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
-        'update_allow_app_any_ip' => !empty($_POST['update_allow_app_any_ip']) ? '1' : '0',
-        'update_use_basic_auth' => !empty($_POST['update_use_basic_auth']) ? '1' : '0',
-        'update_require_login_always' => !empty($_POST['update_require_login_always']) ? '1' : '0',
-        'update_auth_user' => trim($_POST['update_auth_user'] ?? ''),
-        'update_auth_password' => $newPass !== '' ? $newPass : ($config['update_auth_password'] ?? ''),
-        'update_secret' => ($s = trim($_POST['update_secret'] ?? '')) !== '' ? $s : ($config['update_secret'] ?? ''),
-        'admin_secret' => ($a = trim($_POST['admin_secret'] ?? '')) !== '' ? $a : ($config['admin_secret'] ?? ''),
-        'hidden_presets' => $hiddenPresets,
-    ];
+    if ($fromPresetsForm) {
+        $updates = array_merge($config, ['hidden_presets' => $hiddenPresets]);
+    } else {
+        $updates = [
+            'update_repo' => trim($_POST['update_repo'] ?? ''),
+            'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
+            'update_allow_app_any_ip' => !empty($_POST['update_allow_app_any_ip']) ? '1' : '0',
+            'update_use_basic_auth' => !empty($_POST['update_use_basic_auth']) ? '1' : '0',
+            'update_require_login_always' => !empty($_POST['update_require_login_always']) ? '1' : '0',
+            'update_auth_user' => trim($_POST['update_auth_user'] ?? ''),
+            'update_auth_password' => $newPass !== '' ? $newPass : ($config['update_auth_password'] ?? ''),
+            'update_secret' => ($s = trim($_POST['update_secret'] ?? '')) !== '' ? $s : ($config['update_secret'] ?? ''),
+            'admin_secret' => ($a = trim($_POST['admin_secret'] ?? '')) !== '' ? $a : ($config['admin_secret'] ?? ''),
+            'hidden_presets' => $hiddenPresets,
+        ];
+    }
     $saveResult = save_config($repoRoot, $updates);
     if ($saveResult === true) {
         $config = array_merge($config, $updates);
@@ -240,9 +245,12 @@ if (!in_array($tab, $validTabs, true)) {
         </div>
       </section>
 
-      <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
-        <div class="panel">
-          <h2>Custom modules</h2>
+      <button type="submit" class="btn admin-save-main">Save</button>
+    </form>
+
+    <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
+      <div class="panel">
+        <h2>Custom modules</h2>
           <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
           <?php if (count($adminModules) > 0) { ?>
           <ul class="admin-module-list">
@@ -268,7 +276,7 @@ if (!in_array($tab, $validTabs, true)) {
           <?php } else { ?>
           <p class="sub">No custom modules yet. Add one below.</p>
           <?php } ?>
-          <h3 class="admin-module-form-title"><?php echo $editModule ? 'Edit module' : 'Add module'; ?></h3>
+          <h3 class="admin-module-form-title"><?php echo $editModule ? 'Edit module' : 'Add module'; ?><?php if ($editModule) { ?> <a href="<?php echo $baseUrl; ?>&amp;tab=modules" class="admin-module-cancel">Cancel</a><?php } ?></h3>
           <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
           <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
             <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
@@ -283,7 +291,10 @@ if (!in_array($tab, $validTabs, true)) {
             <input type="text" id="module_labels" name="module_labels" value="<?php echo $editModule && !empty($editModule['fields']) ? htmlspecialchars(implode(', ', array_column($editModule['fields'], 'label'))) : ''; ?>" placeholder="e.g. Phone number" autocomplete="off">
             <button type="submit" class="btn"><?php echo $editModule ? 'Update module' : 'Add module'; ?></button>
           </form>
-        </div>
+      </div>
+      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
+        <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+        <input type="hidden" name="tab" value="modules">
         <div class="panel">
           <h2>Default preset tabs</h2>
           <p class="sub">Uncheck presets to hide them from the tab bar for <strong>all users</strong>. Changes apply app-wide. At least one must remain visible.</p>
@@ -297,10 +308,9 @@ if (!in_array($tab, $validTabs, true)) {
           }
           ?>
         </div>
-      </section>
-
-      <button type="submit" class="btn">Save</button>
-    </form>
+        <button type="submit" class="btn admin-save-modules">Save</button>
+      </form>
+    </section>
   </div>
 </body>
 </html>

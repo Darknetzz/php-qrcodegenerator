@@ -181,6 +181,15 @@ body.admin-tab-modules #admin-modules {
   display: block;
 }
 
+body.admin-tab-modules .admin-save-main {
+  display: none;
+}
+
+body.admin-tab-updates .admin-save-modules,
+body.admin-tab-auth .admin-save-modules {
+  display: none;
+}
+
 .admin-module-list {
   list-style: none;
   margin: 0 0 1.25rem;
@@ -243,6 +252,12 @@ body.admin-tab-modules #admin-modules {
 .admin-module-form-title {
   margin: 1rem 0 0.5rem;
   font-size: 0.95rem;
+}
+
+.admin-module-cancel {
+  font-weight: normal;
+  font-size: 0.9rem;
+  margin-left: 0.5rem;
 }
 
 .admin-module-form .btn {
