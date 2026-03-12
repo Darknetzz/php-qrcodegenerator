@@ -160,6 +160,7 @@ $defaultText = 'https://example.com';
     }
     .btn-group {
       display: inline-flex;
+      flex-direction: column;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border);
@@ -168,10 +169,10 @@ $defaultText = 'https://example.com';
     .btn-group .btn {
       border-radius: 0;
       border: none;
-      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
     .btn-group .btn:last-child {
-      border-right: none;
+      border-bottom: none;
     }
     .btn-group .btn-primary {
       background: var(--accent);
