@@ -178,6 +178,24 @@ if ($action === 'upgrade') {
         json_exit(['error' => 'Unauthorized'], 403);
     }
 
+    if (!$isGit) {
+        $github = resolve_repo($repoRoot, false);
+        $releaseUrl = null;
+        if ($github !== null) {
+            [$owner, $repo] = $github;
+            $release = get_latest_release($owner, $repo);
+            if ($release !== null) {
+                $releaseUrl = $release[1];
+            }
+        }
+        json_exit([
+            'success' => false,
+            'noGit' => true,
+            'releaseUrl' => $releaseUrl,
+            'message' => 'Not a git clone. Download the latest release and replace the files.',
+        ], 200);
+    }
+
     $branch = trim((string) ($_REQUEST['branch'] ?? ''));
     if ($branch === '') {
         $ref = @file_get_contents($repoRoot . '/.git/HEAD');
