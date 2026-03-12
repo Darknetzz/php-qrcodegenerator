@@ -2,6 +2,8 @@
 
 A self-contained QR code generator that runs on any Apache or Nginx server with PHP and the GD extension. No Composer, no package managers—drop the files and run.
 
+![QR Code Generator](qrcode.png)
+
 ## Features
 
 - **Presets**: Choose a content type and fill in the form; the correct QR payload is built for you.
