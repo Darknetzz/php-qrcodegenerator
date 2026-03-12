@@ -4,6 +4,58 @@
  * Usage: $config = load_config($repoRoot); then $config['update_repo'], etc.
  */
 
+/** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
+function ip_in_list(string $ip, string $list): bool {
+    $ip = trim($ip);
+    $addrs = array_map('trim', explode(',', $list));
+    foreach ($addrs as $addr) {
+        if ($addr === '') {
+            continue;
+        }
+        if ($addr === $ip) {
+            return true;
+        }
+        if (strpos($addr, '/') !== false) {
+            [$subnet, $bits] = explode('/', $addr, 2);
+            $bits = (int) $bits;
+            $ipLong = ip2long($ip);
+            $subnetLong = ip2long(trim($subnet));
+            if ($ipLong === false || $subnetLong === false) {
+                continue;
+            }
+            $mask = -1 << (32 - $bits);
+            if (($ipLong & $mask) === ($subnetLong & $mask)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Enforce app-level IP allowlist when "allow app any IP" is off.
+ * Call from index.php and generate.php. Exits with 403 if denied.
+ */
+function require_app_access(string $repoRoot): void {
+    $config = load_config($repoRoot);
+    $allowAny = !empty($config['update_allow_app_any_ip']) && $config['update_allow_app_any_ip'] !== '0';
+    if ($allowAny) {
+        return;
+    }
+    $allowlist = trim($config['update_ip_allowlist'] ?? '');
+    if ($allowlist === '') {
+        return;
+    }
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    if (ip_in_list($remote, $allowlist)) {
+        return;
+    }
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Access denied (IP not allowed)';
+    exit;
+}
+
 function load_config(string $repoRoot): array {
     $dataDir = $repoRoot . '/data';
     $dbPath = $dataDir . '/config.sqlite';
@@ -44,6 +96,7 @@ function get_default_config(): array {
     return [
         'update_repo' => 'Darknetzz/php-qrcodegenerator',
         'update_ip_allowlist' => '',
+        'update_allow_app_any_ip' => '1',
         'update_use_basic_auth' => '0',
         'update_require_login_always' => '0',
         'update_auth_user' => '',

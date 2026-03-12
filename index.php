@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/load_config.php';
+require_app_access(realpath(__DIR__));
+
 $title = 'QR Code Generator';
 $defaultText = 'https://example.com';
 ?>
@@ -46,6 +49,12 @@ $defaultText = 'https://example.com';
         <label for="setup-ip">IP allowlist (comma-separated)</label>
         <input type="text" id="setup-ip" name="update_ip_allowlist" placeholder="127.0.0.1, 10.0.0.0/24" autocomplete="off">
         <p class="hint">Only these IPs can use updates and custom modules. Leave empty if you use login only.</p>
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" id="setup-allow-app-any-ip" name="update_allow_app_any_ip" value="1" checked>
+            Allow app usage from any IP (uncheck to restrict main app to allowlist)
+          </label>
+        </div>
         <div class="checkbox-row">
           <label>
             <input type="checkbox" id="setup-use-basic" name="update_use_basic_auth" value="1">

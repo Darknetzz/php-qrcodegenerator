@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updates = [
         'update_repo' => trim($_POST['update_repo'] ?? ''),
         'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
+        'update_allow_app_any_ip' => !empty($_POST['update_allow_app_any_ip']) ? '1' : '0',
         'update_use_basic_auth' => !empty($_POST['update_use_basic_auth']) ? '1' : '0',
         'update_require_login_always' => !empty($_POST['update_require_login_always']) ? '1' : '0',
         'update_auth_user' => trim($_POST['update_auth_user'] ?? ''),
@@ -83,6 +84,12 @@ $pageTitle = 'Admin — Config';
 
         <label for="update_ip_allowlist">IP allowlist (comma-separated, optional)</label>
         <input type="text" id="update_ip_allowlist" name="update_ip_allowlist" value="<?php echo htmlspecialchars($config['update_ip_allowlist'] ?? ''); ?>" placeholder="127.0.0.1, 10.0.0.0/24">
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" name="update_allow_app_any_ip" value="1" <?php echo empty($config['update_allow_app_any_ip']) || $config['update_allow_app_any_ip'] === '0' ? '' : 'checked'; ?>>
+            Allow app usage from any IP (uncheck to restrict main app to allowlist)
+          </label>
+        </div>
 
         <div class="checkbox-row">
           <label>

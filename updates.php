@@ -26,34 +26,6 @@ require_once $repoRoot . '/load_config.php';
 $config = load_config($repoRoot);
 $isGit = is_dir($repoRoot . '/.git');
 
-/** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
-function ip_in_list(string $ip, string $list): bool {
-    $ip = trim($ip);
-    $addrs = array_map('trim', explode(',', $list));
-    foreach ($addrs as $addr) {
-        if ($addr === '') {
-            continue;
-        }
-        if ($addr === $ip) {
-            return true;
-        }
-        if (strpos($addr, '/') !== false) {
-            [$subnet, $bits] = explode('/', $addr, 2);
-            $bits = (int) $bits;
-            $ipLong = ip2long($ip);
-            $subnetLong = ip2long(trim($subnet));
-            if ($ipLong === false || $subnetLong === false) {
-                continue;
-            }
-            $mask = -1 << (32 - $bits);
-            if (($ipLong & $mask) === ($subnetLong & $mask)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 /** Whether access control (IP allowlist or login) is configured. */
 function is_access_configured(array $config): bool {
     $allowlist = trim($config['update_ip_allowlist'] ?? '');
@@ -145,9 +117,11 @@ if ($action === 'save-initial-config') {
         json_exit(['error' => 'Set at least an IP allowlist or enable login with username and password'], 400);
     }
     $requireLoginAlways = !empty($_POST['update_require_login_always']);
+    $allowAppAnyIp = !empty($_POST['update_allow_app_any_ip']);
     $updates = [
         'update_repo' => trim($config['update_repo'] ?? ''),
         'update_ip_allowlist' => $allowlist,
+        'update_allow_app_any_ip' => $allowAppAnyIp ? '1' : '0',
         'update_use_basic_auth' => $useBasic ? '1' : '0',
         'update_require_login_always' => $requireLoginAlways ? '1' : '0',
         'update_auth_user' => $authUser,
