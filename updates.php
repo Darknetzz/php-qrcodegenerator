@@ -45,7 +45,8 @@ function require_updates_access(array $config): void {
     }
     $useLogin = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
     $requireLoginAlways = !empty($config['update_require_login_always']) && $config['update_require_login_always'] !== '0';
-    if ($useLogin && ($requireLoginAlways || !$ipAllowed)) {
+    $mustLogin = $useLogin && ($requireLoginAlways || $allowlist === '' || !$ipAllowed);
+    if ($mustLogin) {
         $user = trim($config['update_auth_user'] ?? '');
         $pass = trim($config['update_auth_password'] ?? '');
         if ($pass === '' && getenv('UPDATE_AUTH_PASSWORD') !== false) {
