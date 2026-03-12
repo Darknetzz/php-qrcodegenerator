@@ -249,7 +249,7 @@ $defaultText = 'https://example.com';
           <button type="button" class="preset-tab" data-preset="image" role="tab">Image</button>
           <button type="button" class="preset-tab" data-preset="custom" role="tab">Custom</button>
         </div>
-        <form id="qr-form" method="get" action="">
+        <form id="qr-form" method="get" action="" autocomplete="off">
           <div id="preset-url" class="preset-panel">
             <label for="url">Website URL</label>
             <input type="url" id="url" placeholder="https://example.com" value="https://example.com">
