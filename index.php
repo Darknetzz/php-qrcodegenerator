@@ -159,14 +159,17 @@ $defaultText = 'https://example.com';
       margin-top: 1.25rem;
     }
     .btn-group {
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
+      width: 100%;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--input-bg);
     }
     .btn-group .btn {
+      width: 100%;
+      box-sizing: border-box;
       border-radius: 0;
       border: none;
       border-bottom: 1px solid var(--border);
