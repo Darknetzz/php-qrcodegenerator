@@ -125,20 +125,30 @@ function get_seed_from_config_php(string $repoRoot): array {
     return $out;
 }
 
-function save_config(string $repoRoot, array $updates): bool {
-    $dbPath = $repoRoot . '/data/config.sqlite';
+/**
+ * @return bool|string true on success, or an error message string on failure
+ */
+function save_config(string $repoRoot, array $updates) {
+    $dataDir = $repoRoot . '/data';
+    $dbPath = $dataDir . '/config.sqlite';
     if (!is_file($dbPath)) {
+        if (!is_dir($dataDir) && !@mkdir($dataDir, 0750, true)) {
+            return 'data/ directory could not be created';
+        }
+        if (!is_dir($dataDir)) {
+            return 'data/ directory is missing';
+        }
         load_config($repoRoot);
     }
     if (!is_file($dbPath)) {
-        return false;
+        return 'Config database could not be created (check data/ is writable)';
     }
     try {
         $db = new PDO('sqlite:' . $dbPath, null, null, [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         ]);
     } catch (Throwable $e) {
-        return false;
+        return 'Config database is not writable';
     }
     $allowed = array_keys(get_default_config());
     $stmt = $db->prepare("INSERT OR REPLACE INTO config (k, v) VALUES (?, ?)");

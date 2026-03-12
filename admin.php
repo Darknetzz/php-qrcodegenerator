@@ -47,11 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'update_secret' => ($s = trim($_POST['update_secret'] ?? '')) !== '' ? $s : ($config['update_secret'] ?? ''),
         'admin_secret' => ($a = trim($_POST['admin_secret'] ?? '')) !== '' ? $a : ($config['admin_secret'] ?? ''),
     ];
-    if (save_config($repoRoot, $updates)) {
+    $saveResult = save_config($repoRoot, $updates);
+    if ($saveResult === true) {
         $config = array_merge($config, $updates);
         $saved = true;
     } else {
-        $error = 'Could not save (check data/ is writable).';
+        $error = is_string($saveResult) ? $saveResult : 'Could not save (check data/ is writable).';
     }
 }
 

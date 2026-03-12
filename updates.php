@@ -129,8 +129,9 @@ if ($action === 'save-initial-config') {
         'update_secret' => trim($config['update_secret'] ?? ''),
         'admin_secret' => trim($config['admin_secret'] ?? ''),
     ];
-    if (!save_config($repoRoot, $updates)) {
-        json_exit(['error' => 'Could not save config'], 500);
+    $saveResult = save_config($repoRoot, $updates);
+    if ($saveResult !== true) {
+        json_exit(['error' => 'Could not save config. ' . (is_string($saveResult) ? $saveResult : 'Check data/ is writable.')], 500);
     }
     json_exit(['success' => true, 'configured' => true]);
 }
