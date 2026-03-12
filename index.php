@@ -471,7 +471,7 @@ $defaultText = 'https://example.com';
         <svg class="btn-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>Check for updates
       </button>
       <span class="update-msg" id="update-msg"></span>
-      <a href="#" class="btn btn-primary" id="btn-upgrade" style="display:none;"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade</a>
+      <button type="button" class="btn btn-primary" id="btn-upgrade" style="display:none;"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
     </div>
   </div>
 
@@ -689,6 +689,71 @@ $defaultText = 'https://example.com';
   try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
   var initial = (saved && PRESET_IDS.indexOf(saved) !== -1) ? saved : 'text';
   setPreset(initial);
+})();
+
+(function updatesUi() {
+  var versionEl = document.getElementById('current-version');
+  var msgEl = document.getElementById('update-msg');
+  var checkBtn = document.getElementById('btn-check-updates');
+  var upgradeBtn = document.getElementById('btn-upgrade');
+
+  function setMsg(text, className) {
+    msgEl.textContent = text || '';
+    msgEl.className = 'update-msg' + (className ? ' ' + className : '');
+  }
+
+  function loadVersion() {
+    fetch('updates.php?action=check')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.currentVersion) versionEl.textContent = 'Version ' + d.currentVersion;
+      })
+      .catch(function() { versionEl.textContent = 'Version —'; });
+  }
+
+  checkBtn.addEventListener('click', function() {
+    checkBtn.disabled = true;
+    setMsg('Checking…', 'loading');
+    upgradeBtn.style.display = 'none';
+    fetch('updates.php?action=check')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) {
+          setMsg(d.error, 'error');
+          return;
+        }
+        if (d.updateAvailable && d.latestVersion) {
+          setMsg('Update available: ' + d.latestVersion, 'has-update');
+          upgradeBtn.style.display = 'inline-flex';
+        } else {
+          setMsg('You’re up to date.', '');
+        }
+      })
+      .catch(function() { setMsg('Check failed.', 'error'); })
+      .finally(function() { checkBtn.disabled = false; });
+  });
+
+  upgradeBtn.addEventListener('click', function() {
+    upgradeBtn.disabled = true;
+    setMsg('Upgrading…', 'loading');
+    var form = new FormData();
+    form.append('action', 'upgrade');
+    fetch('updates.php', { method: 'POST', body: form })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.success) {
+          setMsg('Upgrade complete. Reload the page.', 'has-update');
+          upgradeBtn.style.display = 'none';
+          loadVersion();
+        } else {
+          setMsg((d.error || 'Upgrade failed.') + (d.output ? ' ' + d.output : ''), 'error');
+        }
+      })
+      .catch(function() { setMsg('Upgrade request failed.', 'error'); })
+      .finally(function() { upgradeBtn.disabled = false; });
+  });
+
+  loadVersion();
 })();
   </script>
 </body>

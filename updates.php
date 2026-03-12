@@ -153,7 +153,7 @@ if ($action === 'upgrade') {
     $branch = preg_replace('/[^a-zA-Z0-9._\-]/', '', $branch) ?: 'main';
 
     $cmd = sprintf(
-        'cd %s && git fetch origin 2>&1 && git pull --ff-only origin %s 2>&1',
+        'cd %s && git fetch origin 2>&1; git pull --ff-only origin %s 2>&1; echo __EXIT__$?',
         escapeshellarg($repoRoot),
         escapeshellarg($branch)
     );
@@ -161,16 +161,19 @@ if ($action === 'upgrade') {
     if ($output === null) {
         json_exit(['success' => false, 'error' => 'git pull failed', 'output' => ''], 500);
     }
-    $output = trim($output);
-    // Heuristic: "Already up to date" or "Updating ..." with no "error:" / "fatal:"
-    $success = (stripos($output, 'Already up to date') !== false)
-        || (preg_match('/Updating\s+[a-f0-9]+\s+\.\.\.[a-f0-9]+/i', $output) === 1)
-        && (stripos($output, 'fatal:') === false && stripos($output, 'error:') === false);
+    $exitCode = 1;
+    if (preg_match('/__EXIT__(\d+)\s*$/', $output, $m)) {
+        $exitCode = (int) $m[1];
+        $output = trim(preg_replace('/__EXIT__\d+\s*$/', '', $output));
+    } else {
+        $output = trim($output);
+    }
+    $success = $exitCode === 0;
 
     json_exit([
         'success' => $success,
         'output' => $output,
-        'error' => $success ? null : 'Pull may have failed; check output.',
+        'error' => $success ? null : 'Pull failed; check output.',
     ], $success ? 200 : 500);
 }
 
