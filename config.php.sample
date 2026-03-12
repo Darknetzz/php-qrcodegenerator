@@ -1,0 +1,14 @@
+<?php
+/**
+ * Copy to config.php. Used to seed the SQLite config on first load (when DB is empty).
+ * After that, all changes are made in the admin panel and stored in data/config.sqlite.
+ */
+return [
+    'update_repo' => 'Darknetzz/php-qrcodegenerator',
+    'update_ip_allowlist' => '',
+    'update_use_basic_auth' => '0',
+    'update_auth_user' => '',
+    'update_auth_password' => '',
+    'update_secret' => '',
+    'admin_secret' => '',
+];

@@ -507,6 +507,7 @@ $defaultText = 'https://example.com';
       </button>
       <span class="update-msg" id="update-msg"></span>
       <button type="button" class="btn btn-primary" id="btn-upgrade" style="display:none;"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
+      <a href="admin.php" class="btn btn-secondary" style="margin-left:auto;">Admin</a>
     </div>
   </div>
 

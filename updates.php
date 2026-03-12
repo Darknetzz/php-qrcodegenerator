@@ -1,13 +1,8 @@
 <?php
 /**
  * Update check (GitHub releases) and upgrade (git pull or release page) endpoint.
- * Works for both git clones and zip installs.
- *
- * Access control (optional, in update-config.php):
- *   - UPDATE_IP_ALLOWLIST: comma-separated IPs or CIDR (e.g. "127.0.0.1, 10.0.0.0/24") — request must come from one of these
- *   - UPDATE_USE_BASIC_AUTH: true to require HTTP Basic Auth
- *   - UPDATE_AUTH_USER / UPDATE_AUTH_PASSWORD: credentials for Basic Auth (or set UPDATE_AUTH_PASSWORD in env only)
- *   - UPDATE_SECRET: optional; when set, upgrade action also requires secret in POST or X-Update-Secret header
+ * Config is loaded from SQLite (data/config.sqlite), seeded from config.php on first run.
+ * Access control: IP allowlist, Basic Auth, and upgrade secret are set in admin or config.php.
  *
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
@@ -19,14 +14,9 @@ if ($repoRoot === false) {
     json_exit(['error' => 'Invalid app root'], 500);
 }
 
+require_once $repoRoot . '/load_config.php';
+$config = load_config($repoRoot);
 $isGit = is_dir($repoRoot . '/.git');
-
-if (!defined('UPDATE_REPO')) {
-    define('UPDATE_REPO', 'Darknetzz/php-qrcodegenerator');
-}
-if (is_file($repoRoot . '/update-config.php')) {
-    require_once $repoRoot . '/update-config.php';
-}
 
 /** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
 function ip_in_list(string $ip, string $list): bool {
@@ -57,9 +47,9 @@ function ip_in_list(string $ip, string $list): bool {
 }
 
 /** Enforce IP allowlist and/or HTTP Basic Auth for check/upgrade. Exits with 401/403 if denied. */
-function require_updates_access(): void {
+function require_updates_access(array $config): void {
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
-    $allowlist = defined('UPDATE_IP_ALLOWLIST') ? (string) UPDATE_IP_ALLOWLIST : '';
+    $allowlist = trim($config['update_ip_allowlist'] ?? '');
     if ($allowlist !== '') {
         $allowed = ip_in_list($remote, $allowlist);
         if (!$allowed) {
@@ -68,10 +58,13 @@ function require_updates_access(): void {
             exit;
         }
     }
-    $useBasic = defined('UPDATE_USE_BASIC_AUTH') && UPDATE_USE_BASIC_AUTH;
+    $useBasic = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
     if ($useBasic) {
-        $user = defined('UPDATE_AUTH_USER') ? (string) UPDATE_AUTH_USER : '';
-        $pass = defined('UPDATE_AUTH_PASSWORD') ? (string) UPDATE_AUTH_PASSWORD : (getenv('UPDATE_AUTH_PASSWORD') ?: '');
+        $user = trim($config['update_auth_user'] ?? '');
+        $pass = trim($config['update_auth_password'] ?? '');
+        if ($pass === '' && getenv('UPDATE_AUTH_PASSWORD') !== false) {
+            $pass = (string) getenv('UPDATE_AUTH_PASSWORD');
+        }
         if ($user === '' || $pass === '') {
             http_response_code(500);
             echo json_encode(['error' => 'Basic Auth configured but user/password not set'], JSON_UNESCAPED_SLASHES);
@@ -88,7 +81,7 @@ function require_updates_access(): void {
     }
 }
 
-require_updates_access();
+require_updates_access($config);
 
 /** Parse origin URL from .git/config → [owner, repo] for GitHub, or null */
 function get_github_repo(string $repoRoot): ?array {
@@ -216,24 +209,29 @@ function json_exit(array $data, int $code = 200): void {
     exit;
 }
 
-function upgrade_allowed(): bool {
-    $secret = getenv('UPDATE_SECRET');
-    if ($secret === false || $secret === '') {
-        return true; // no secret configured → allow (rely on server access control)
+function upgrade_allowed(array $config): bool {
+    $secret = trim($config['update_secret'] ?? '');
+    if ($secret === '') {
+        $envSecret = getenv('UPDATE_SECRET');
+        if ($envSecret === false || $envSecret === '') {
+            return true;
+        }
+        $secret = $envSecret;
     }
     $given = $_REQUEST['secret'] ?? $_SERVER['HTTP_X_UPDATE_SECRET'] ?? '';
     return $given !== '' && hash_equals($secret, $given);
 }
 
-/** Resolve [owner, repo] for GitHub API: from git config or from UPDATE_REPO (e.g. zip install) */
-function resolve_repo(string $repoRoot, bool $isGit): ?array {
+/** Resolve [owner, repo] for GitHub API: from git config or from update_repo (e.g. zip install) */
+function resolve_repo(string $repoRoot, bool $isGit, array $config): ?array {
     if ($isGit) {
         return get_github_repo($repoRoot);
     }
-    if (!defined('UPDATE_REPO') || UPDATE_REPO === '') {
+    $repo = trim($config['update_repo'] ?? '');
+    if ($repo === '') {
         return null;
     }
-    $slug = preg_replace('/\s+/', '', (string) UPDATE_REPO);
+    $slug = preg_replace('/\s+/', '', $repo);
     if (preg_match('#^([^/]+)/([^/]+)$#', $slug, $m)) {
         return [$m[1], $m[2]];
     }
@@ -244,7 +242,7 @@ $action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
 
 if ($action === 'check') {
     $current = get_local_version($repoRoot, $isGit);
-    $github = resolve_repo($repoRoot, $isGit);
+    $github = resolve_repo($repoRoot, $isGit, $config);
     $latestVersion = null;
     $releaseUrl = null;
     $updateAvailable = false;
@@ -271,12 +269,12 @@ if ($action === 'upgrade') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         json_exit(['error' => 'Use POST for upgrade'], 405);
     }
-    if (!upgrade_allowed()) {
+    if (!upgrade_allowed($config)) {
         json_exit(['error' => 'Unauthorized'], 403);
     }
 
     if (!$isGit) {
-        $github = resolve_repo($repoRoot, false);
+        $github = resolve_repo($repoRoot, false, $config);
         $releaseUrl = null;
         if ($github !== null) {
             [$owner, $repo] = $github;

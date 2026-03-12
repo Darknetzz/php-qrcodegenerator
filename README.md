@@ -66,7 +66,9 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 | `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
 | `VERSION`     | App version (first line only; for zip installs; in git, version is computed from `git describe`) |
 | `updates.php`  | Update check (GitHub releases) and upgrade (git pull or release-page link) |
-| `update-config.php` | Optional: repo, IP allowlist, Basic Auth, upgrade secret (copy from `update-config.sample.php`) |
+| `load_config.php` | Loads config from SQLite (`data/config.sqlite`); seeds from `config.php` on first run |
+| `admin.php`   | Admin panel: edit all settings in the browser (access with `?key=` your admin or upgrade secret) |
+| `config.php.sample` | Copy to `config.php` to seed the DB on first load (optional) |
 | `update-version.php` | CLI: writes current git version to VERSION (run before release zip, or from a git hook) |
 
 ## Version
@@ -82,17 +84,15 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
   E.g. `cp scripts/post-commit.sample .git/hooks/post-commit && chmod +x .git/hooks/post-commit`  
   Release steps are in [AGENTS.md](AGENTS.md#releasing-eg-101).
 
-## Update endpoint access (updates.php)
+## Config and admin (updates.php, admin panel)
 
-By default, `updates.php` is open. To lock it down, copy `update-config.sample.php` to `update-config.php` and set:
+Settings are stored in **SQLite** (`data/config.sqlite`). On first run, if the DB is empty, values are seeded from **`config.php`** (copy from `config.php.sample`) if that file exists. After that, change everything from the **Admin** panel in the web UI (link at the bottom of the main page).
 
-- **IP allowlist:** `UPDATE_IP_ALLOWLIST` — comma-separated IPs or CIDR (e.g. `127.0.0.1, 10.0.0.0/24`). Requests from other IPs get 403.
-- **Basic Auth:** `UPDATE_USE_BASIC_AUTH`, `UPDATE_AUTH_USER`, `UPDATE_AUTH_PASSWORD` — browser will prompt for username/password. You can set the password in server env only (`UPDATE_AUTH_PASSWORD`) for security.
-- **Upgrade secret:** `UPDATE_SECRET` (env) — when set, the upgrade action also requires this value in the POST body or `X-Update-Secret` header.
+- Open **Admin** (or `admin.php`). If you have not set a secret yet, the page loads for first-time setup. Set an **admin secret** and/or **upgrade secret**, then save. Next time, use `admin.php?key=<your-secret>` to open the panel.
+- In Admin you can set: **GitHub repo** (for zip installs), **IP allowlist** (comma-separated IPs or CIDR), **Basic Auth** (username/password for check and upgrade), **upgrade secret** (required in POST or header for upgrade), **admin secret** (key to open Admin).
+- Only the update endpoint (`updates.php`) is protected by these settings. The main app (index.php, generate.php, custom modules) is not. To protect the whole site, use your server auth (e.g. Apache `AuthType Basic` for the directory).
 
-You can use IP allowlist and Basic Auth together.
 
-**Note:** Only the update endpoint (`updates.php`) is protected by this config. The main app (index.php, generate.php, including “Add custom module”) is not. To require login for the whole site, use your server’s auth (e.g. Apache `AuthType Basic` for the directory).
 
 ## API (generate.php)
 

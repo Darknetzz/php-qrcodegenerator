@@ -1,3 +1,4 @@
 # Dependencies are committed (vendor/ + composer.lock) for copy-and-run deployment.
-# Optional: override UPDATE_REPO for update check (e.g. fork)
-update-config.php
+# Config: optional PHP seed (secrets); SQLite DB
+config.php
+data/
