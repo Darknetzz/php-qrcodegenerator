@@ -1,0 +1,8 @@
+# Optional Apache config for QR Code Generator
+# Only needed if you hit request length limits with long content.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Optional: redirect / to index.php if not already
+    DirectoryIndex index.php
+</IfModule>
