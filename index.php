@@ -870,10 +870,14 @@ $defaultText = 'https://example.com';
   var btnLogout = document.getElementById('btn-logout');
   if (btnLogout) {
     btnLogout.addEventListener('click', function() {
+      var btn = this;
+      btn.disabled = true;
       var fd = new FormData();
       fd.append('action', 'logout');
-      fetch('updates.php', { method: 'POST', body: fd, credentials: 'include' })
-        .then(function() { applyConfigStatus(); });
+      fetch('updates.php?action=logout', { method: 'POST', body: fd, credentials: 'include' })
+        .then(function() { applyConfigStatus(); })
+        .catch(function() { applyConfigStatus(); })
+        .finally(function() { btn.disabled = false; });
     });
   }
 
