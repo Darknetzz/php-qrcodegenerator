@@ -345,6 +345,22 @@ label { display: flex; align-items: center; }
 
 .updates-row .update-msg.loading { color: var(--muted); }
 
+.settings-gate-message {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.settings-gate-message a { color: var(--accent); }
+
+.settings-gate-message.setup { border-color: var(--accent); color: var(--text); }
+
+.settings-gated.hidden { display: none !important; }
+
 #preview { display: none; }
 
 #btn-upgrade { display: none; }

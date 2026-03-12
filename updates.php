@@ -4,6 +4,7 @@
  * Config is loaded from SQLite (data/config.sqlite), seeded from config.php on first run.
  * Access control: IP allowlist, Basic Auth, and upgrade secret are set in admin or config.php.
  *
+ * GET  ?action=config-status → { configured } — whether IP/Basic Auth is set; if set, requires auth
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
@@ -46,6 +47,13 @@ function ip_in_list(string $ip, string $list): bool {
     return false;
 }
 
+/** Whether access control (IP allowlist or Basic Auth) is configured. */
+function is_access_configured(array $config): bool {
+    $allowlist = trim($config['update_ip_allowlist'] ?? '');
+    $useBasic = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
+    return $allowlist !== '' || $useBasic;
+}
+
 /** Enforce IP allowlist and/or HTTP Basic Auth for check/upgrade. Exits with 401/403 if denied. */
 function require_updates_access(array $config): void {
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -81,7 +89,18 @@ function require_updates_access(array $config): void {
     }
 }
 
-require_updates_access($config);
+$action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
+
+if ($action === 'config-status') {
+    if (is_access_configured($config)) {
+        require_updates_access($config);
+    }
+    json_exit(['configured' => is_access_configured($config)]);
+}
+
+if (in_array($action, ['check', 'upgrade'], true)) {
+    require_updates_access($config);
+}
 
 /** Parse origin URL from .git/config → [owner, repo] for GitHub, or null */
 function get_github_repo(string $repoRoot): ?array {
@@ -237,8 +256,6 @@ function resolve_repo(string $repoRoot, bool $isGit, array $config): ?array {
     }
     return null;
 }
-
-$action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
 
 if ($action === 'check') {
     $current = get_local_version($repoRoot, $isGit);

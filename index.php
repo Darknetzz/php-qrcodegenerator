@@ -58,8 +58,8 @@ $defaultText = 'https://example.com';
           <button type="button" class="preset-tab" data-preset="appstore" role="tab"><svg class="tab-icon" aria-hidden="true"><use href="#icon-appstore"/></svg>App Store</button>
           <button type="button" class="preset-tab" data-preset="image" role="tab"><svg class="tab-icon" aria-hidden="true"><use href="#icon-image"/></svg>Image</button>
           <button type="button" class="preset-tab" data-preset="custom" role="tab"><svg class="tab-icon" aria-hidden="true"><use href="#icon-custom"/></svg>Custom</button>
-          <span id="custom-modules-tabs"></span>
-          <button type="button" class="preset-tab preset-tab-add" id="btn-add-module" title="Add custom module" aria-label="Add custom module">+</button>
+          <span id="custom-modules-tabs" class="settings-gated"></span>
+          <button type="button" class="preset-tab preset-tab-add settings-gated" id="btn-add-module" title="Add custom module" aria-label="Add custom module">+</button>
         </div>
         <form id="qr-form" method="get" action="" autocomplete="off">
           <div id="preset-url" class="preset-panel">
@@ -142,7 +142,7 @@ $defaultText = 'https://example.com';
             <label for="custom-text"><svg class="label-icon" aria-hidden="true"><use href="#icon-custom"/></svg>Raw content (URL, vCard, or any string)</label>
             <textarea id="custom-text" placeholder="Paste or type any content to encode" autocomplete="off"></textarea>
           </div>
-          <div id="custom-modules-panels"></div>
+          <div id="custom-modules-panels" class="settings-gated"></div>
 
           <div class="row">
             <div class="field">
@@ -220,7 +220,8 @@ $defaultText = 'https://example.com';
       </div>
     </div>
 
-    <div class="foot updates-row" id="updates-row" aria-live="polite">
+    <div id="settings-gate-message" class="settings-gate-message" style="display:none;" aria-live="polite"></div>
+    <div class="foot updates-row settings-gated" id="updates-row" aria-live="polite">
       <span class="version" id="current-version">—</span>
       <button type="button" class="btn btn-secondary" id="btn-check-updates" aria-label="Check for updates">
         <svg class="btn-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>Check for updates
@@ -574,10 +575,64 @@ $defaultText = 'https://example.com';
   var msgEl = document.getElementById('update-msg');
   var checkBtn = document.getElementById('btn-check-updates');
   var upgradeBtn = document.getElementById('btn-upgrade');
+  var gateMsgEl = document.getElementById('settings-gate-message');
 
   function setMsg(text, className) {
     msgEl.textContent = text || '';
     msgEl.className = 'update-msg' + (className ? ' ' + className : '');
+  }
+
+  function setGateMessage(html, className) {
+    if (!gateMsgEl) return;
+    gateMsgEl.innerHTML = html || '';
+    gateMsgEl.className = 'settings-gate-message' + (className ? ' ' + className : '');
+    gateMsgEl.style.display = html ? 'block' : 'none';
+  }
+
+  function setGatedVisible(visible) {
+    document.querySelectorAll('.settings-gated').forEach(function(el) {
+      el.classList.toggle('hidden', !visible);
+    });
+  }
+
+  function applyConfigStatus() {
+    fetch('updates.php?action=config-status', { credentials: 'include' })
+      .then(function(r) {
+        if (r.status === 401 || r.status === 403) {
+          setGatedVisible(false);
+          setGateMessage(
+            'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
+            '<a href="admin.php">Admin</a> &middot; <a href="updates.php?action=check" target="_blank" rel="noopener">Log in</a>.',
+            ''
+          );
+          var activeTab = document.querySelector('.preset-tab.active');
+          if (activeTab && (activeTab.getAttribute('data-preset') || '').indexOf('custom-') === 0) {
+            var textTab = document.querySelector('.preset-tab[data-preset="text"]');
+            if (textTab) textTab.click();
+          }
+          return;
+        }
+        return r.json();
+      })
+      .then(function(d) {
+        if (d === undefined) return;
+        setGatedVisible(true);
+        if (d.configured) {
+          setGateMessage('');
+        } else {
+          setGateMessage(
+            'First-time setup: configure <strong>IP allowlist</strong> or <strong>login</strong> in Admin to protect updates and custom modules. ' +
+            '<a href="admin.php">Open Admin</a>.',
+            'setup'
+          );
+        }
+        loadVersion();
+      })
+      .catch(function() {
+        setGatedVisible(true);
+        setGateMessage('');
+        loadVersion();
+      });
   }
 
   function loadVersion() {
@@ -673,7 +728,7 @@ $defaultText = 'https://example.com';
       .finally(function() { upgradeBtn.disabled = false; });
   });
 
-  loadVersion();
+  applyConfigStatus();
 })();
   </script>
 </body>
