@@ -29,32 +29,41 @@ function hex_to_rgb(string $hex): ?array {
     ];
 }
 
-/** Dark module types that get the foreground color (GdImage uses [R,G,B]) */
-function dark_module_values_rgb(array $fg): array {
-    $dark = [
-        QRMatrix::M_DARKMODULE, QRMatrix::M_DATA_DARK, QRMatrix::M_FINDER_DARK,
-        QRMatrix::M_SEPARATOR_DARK, QRMatrix::M_ALIGNMENT_DARK, QRMatrix::M_TIMING_DARK,
-        QRMatrix::M_FORMAT_DARK, QRMatrix::M_VERSION_DARK, QRMatrix::M_QUIETZONE_DARK,
-        QRMatrix::M_LOGO_DARK, QRMatrix::M_FINDER_DOT,
-    ];
+/** Dark module types that get the foreground color */
+const DARK_MODULE_TYPES = [
+    QRMatrix::M_DARKMODULE, QRMatrix::M_DATA_DARK, QRMatrix::M_FINDER_DARK,
+    QRMatrix::M_SEPARATOR_DARK, QRMatrix::M_ALIGNMENT_DARK, QRMatrix::M_TIMING_DARK,
+    QRMatrix::M_FORMAT_DARK, QRMatrix::M_VERSION_DARK, QRMatrix::M_QUIETZONE_DARK,
+    QRMatrix::M_LOGO_DARK, QRMatrix::M_FINDER_DOT,
+];
+
+/** Light module types that get the background color */
+const LIGHT_MODULE_TYPES = [
+    QRMatrix::M_NULL, QRMatrix::M_DARKMODULE_LIGHT, QRMatrix::M_DATA, QRMatrix::M_FINDER,
+    QRMatrix::M_SEPARATOR, QRMatrix::M_ALIGNMENT, QRMatrix::M_TIMING, QRMatrix::M_FORMAT,
+    QRMatrix::M_VERSION, QRMatrix::M_QUIETZONE, QRMatrix::M_LOGO, QRMatrix::M_FINDER_DOT_LIGHT,
+];
+
+/** Module values for GdImage PNG: dark => fg [R,G,B], light => bg [R,G,B] */
+function module_values_rgb(array $fg, array $bg): array {
     $out = [];
-    foreach ($dark as $type) {
+    foreach (DARK_MODULE_TYPES as $type) {
         $out[$type] = $fg;
+    }
+    foreach (LIGHT_MODULE_TYPES as $type) {
+        $out[$type] = $bg;
     }
     return $out;
 }
 
-/** Dark module types for SVG (hex string) */
-function dark_module_values_hex(string $fg): array {
-    $dark = [
-        QRMatrix::M_DARKMODULE, QRMatrix::M_DATA_DARK, QRMatrix::M_FINDER_DARK,
-        QRMatrix::M_SEPARATOR_DARK, QRMatrix::M_ALIGNMENT_DARK, QRMatrix::M_TIMING_DARK,
-        QRMatrix::M_FORMAT_DARK, QRMatrix::M_VERSION_DARK, QRMatrix::M_QUIETZONE_DARK,
-        QRMatrix::M_LOGO_DARK, QRMatrix::M_FINDER_DOT,
-    ];
+/** Module values for SVG: dark => fg hex, light => bg hex */
+function module_values_hex(string $fg, string $bg): array {
     $out = [];
-    foreach ($dark as $type) {
+    foreach (DARK_MODULE_TYPES as $type) {
         $out[$type] = $fg;
+    }
+    foreach (LIGHT_MODULE_TYPES as $type) {
+        $out[$type] = $bg;
     }
     return $out;
 }
@@ -96,7 +105,7 @@ if ($format === 'svg') {
     $options = new QROptions(array_merge($baseOptions, [
         'outputType'   => QROutputInterface::MARKUP_SVG,
         'bgColor'      => $bgNorm,
-        'moduleValues' => dark_module_values_hex($fgNorm),
+        'moduleValues' => module_values_hex($fgNorm, $bgNorm),
     ]));
     $qr = new QRCode($options);
     $output = $qr->render($text);
@@ -110,7 +119,7 @@ if ($format === 'svg') {
 $options = new QROptions(array_merge($baseOptions, [
     'outputType'   => QROutputInterface::GDIMAGE_PNG,
     'bgColor'      => $bgRgb,
-    'moduleValues' => dark_module_values_rgb($fgRgb),
+    'moduleValues' => module_values_rgb($fgRgb, $bgRgb),
 ]));
 $qr = new QRCode($options);
 $output = $qr->render($text);
