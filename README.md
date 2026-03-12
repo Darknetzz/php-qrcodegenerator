@@ -66,6 +66,7 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 | `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
 | `VERSION`     | App version (first line only; for zip installs; in git, version is computed from `git describe`) |
 | `updates.php`  | Update check (GitHub releases) and upgrade (git pull or release-page link) |
+| `update-config.php` | Optional: repo, IP allowlist, Basic Auth, upgrade secret (copy from `update-config.sample.php`) |
 | `update-version.php` | CLI: writes current git version to VERSION (run before release zip, or from a git hook) |
 
 ## Version
@@ -76,6 +77,16 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
   `php update-version.php`  
   Optional: copy `scripts/post-checkout.sample` to `.git/hooks/post-checkout` and `scripts/post-merge.sample` to `.git/hooks/post-merge`, then `chmod +x`, so `VERSION` is updated automatically after checkout/pull.  
   Release steps are in [AGENTS.md](AGENTS.md#releasing-eg-101).
+
+## Update endpoint access (updates.php)
+
+By default, `updates.php` is open. To lock it down, copy `update-config.sample.php` to `update-config.php` and set:
+
+- **IP allowlist:** `UPDATE_IP_ALLOWLIST` — comma-separated IPs or CIDR (e.g. `127.0.0.1, 10.0.0.0/24`). Requests from other IPs get 403.
+- **Basic Auth:** `UPDATE_USE_BASIC_AUTH`, `UPDATE_AUTH_USER`, `UPDATE_AUTH_PASSWORD` — browser will prompt for username/password. You can set the password in server env only (`UPDATE_AUTH_PASSWORD`) for security.
+- **Upgrade secret:** `UPDATE_SECRET` (env) — when set, the upgrade action also requires this value in the POST body or `X-Update-Secret` header.
+
+You can use IP allowlist and Basic Auth together.
 
 ## API (generate.php)
 

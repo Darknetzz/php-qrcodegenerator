@@ -1,12 +1,16 @@
 <?php
 /**
  * Update check (GitHub releases) and upgrade (git pull or release page) endpoint.
- * Works for both git clones and zip installs. Optional: set UPDATE_SECRET in env for upgrade.
+ * Works for both git clones and zip installs.
+ *
+ * Access control (optional, in update-config.php):
+ *   - UPDATE_IP_ALLOWLIST: comma-separated IPs or CIDR (e.g. "127.0.0.1, 10.0.0.0/24") — request must come from one of these
+ *   - UPDATE_USE_BASIC_AUTH: true to require HTTP Basic Auth
+ *   - UPDATE_AUTH_USER / UPDATE_AUTH_PASSWORD: credentials for Basic Auth (or set UPDATE_AUTH_PASSWORD in env only)
+ *   - UPDATE_SECRET: optional; when set, upgrade action also requires secret in POST or X-Update-Secret header
  *
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
- *
- * Zip installs: repo from update-config.php (UPDATE_REPO = 'owner/repo') or default. Version from VERSION file.
  */
 header('Content-Type: application/json; charset=utf-8');
 
@@ -17,13 +21,74 @@ if ($repoRoot === false) {
 
 $isGit = is_dir($repoRoot . '/.git');
 
-/** Default repo when not git (e.g. zip install). Override in update-config.php with define('UPDATE_REPO', 'owner/repo'); */
 if (!defined('UPDATE_REPO')) {
     define('UPDATE_REPO', 'Darknetzz/php-qrcodegenerator');
 }
 if (is_file($repoRoot . '/update-config.php')) {
     require_once $repoRoot . '/update-config.php';
 }
+
+/** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
+function ip_in_list(string $ip, string $list): bool {
+    $ip = trim($ip);
+    $addrs = array_map('trim', explode(',', $list));
+    foreach ($addrs as $addr) {
+        if ($addr === '') {
+            continue;
+        }
+        if ($addr === $ip) {
+            return true;
+        }
+        if (strpos($addr, '/') !== false) {
+            [$subnet, $bits] = explode('/', $addr, 2);
+            $bits = (int) $bits;
+            $ipLong = ip2long($ip);
+            $subnetLong = ip2long(trim($subnet));
+            if ($ipLong === false || $subnetLong === false) {
+                continue;
+            }
+            $mask = -1 << (32 - $bits);
+            if (($ipLong & $mask) === ($subnetLong & $mask)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/** Enforce IP allowlist and/or HTTP Basic Auth for check/upgrade. Exits with 401/403 if denied. */
+function require_updates_access(): void {
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '';
+    $allowlist = defined('UPDATE_IP_ALLOWLIST') ? (string) UPDATE_IP_ALLOWLIST : '';
+    if ($allowlist !== '') {
+        $allowed = ip_in_list($remote, $allowlist);
+        if (!$allowed) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Access denied (IP not allowed)'], JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+    }
+    $useBasic = defined('UPDATE_USE_BASIC_AUTH') && UPDATE_USE_BASIC_AUTH;
+    if ($useBasic) {
+        $user = defined('UPDATE_AUTH_USER') ? (string) UPDATE_AUTH_USER : '';
+        $pass = defined('UPDATE_AUTH_PASSWORD') ? (string) UPDATE_AUTH_PASSWORD : (getenv('UPDATE_AUTH_PASSWORD') ?: '');
+        if ($user === '' || $pass === '') {
+            http_response_code(500);
+            echo json_encode(['error' => 'Basic Auth configured but user/password not set'], JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+        $givenUser = $_SERVER['PHP_AUTH_USER'] ?? '';
+        $givenPass = $_SERVER['PHP_AUTH_PW'] ?? '';
+        if ($givenUser === '' || $givenPass === '' || !hash_equals($user, $givenUser) || !hash_equals($pass, $givenPass)) {
+            header('WWW-Authenticate: Basic realm="Updates"');
+            http_response_code(401);
+            echo json_encode(['error' => 'Authentication required'], JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+    }
+}
+
+require_updates_access();
 
 /** Parse origin URL from .git/config → [owner, repo] for GitHub, or null */
 function get_github_repo(string $repoRoot): ?array {
