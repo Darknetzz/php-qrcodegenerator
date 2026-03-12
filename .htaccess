@@ -4,8 +4,10 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Redirect HTTP to HTTPS (disable if you don't have SSL on this server)
+    # Redirect HTTP to HTTPS (skip when behind a reverse proxy that set X-Forwarded-Proto)
     RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP:X-Forwarded-Proto} !on
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Optional: redirect / to index.php if not already
