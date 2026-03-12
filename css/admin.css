@@ -145,17 +145,17 @@ input[type="checkbox"] {
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
   border-radius: 6px;
   text-decoration: none;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
 .admin-pill:hover {
-  color: var(--text);
-  background: var(--input-bg);
+  color: #000;
+  background: var(--accent);
 }
 
 .admin-pill.is-active {

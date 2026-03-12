@@ -32,10 +32,21 @@ if (!$allowed) {
     exit;
 }
 
+$defaultPresetIds = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+$defaultPresetLabels = ['url' => 'URL', 'wifi' => 'Wi‑Fi', 'vcard' => 'vCard', 'text' => 'Text', 'email' => 'Email', 'sms' => 'SMS', 'bitcoin' => 'Bitcoin', 'facebook' => 'Facebook', 'pdf' => 'PDF', 'mp3' => 'MP3', 'appstore' => 'App Store', 'image' => 'Image', 'custom' => 'Custom'];
+
 $saved = false;
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $newPass = trim($_POST['update_auth_password'] ?? '');
+    $hiddenPresets = $config['hidden_presets'] ?? '[]';
+    if ((isset($_POST['tab']) && $_POST['tab'] === 'modules') || (isset($_GET['tab']) && $_GET['tab'] === 'modules')) {
+        $visible = isset($_POST['visible_presets']) && is_array($_POST['visible_presets']) ? $_POST['visible_presets'] : [];
+        $hidden = array_values(array_diff($defaultPresetIds, $visible));
+        if (count($hidden) < count($defaultPresetIds)) {
+            $hiddenPresets = json_encode($hidden);
+        }
+    }
     $updates = [
         'update_repo' => trim($_POST['update_repo'] ?? ''),
         'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
@@ -46,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'update_auth_password' => $newPass !== '' ? $newPass : ($config['update_auth_password'] ?? ''),
         'update_secret' => ($s = trim($_POST['update_secret'] ?? '')) !== '' ? $s : ($config['update_secret'] ?? ''),
         'admin_secret' => ($a = trim($_POST['admin_secret'] ?? '')) !== '' ? $a : ($config['admin_secret'] ?? ''),
+        'hidden_presets' => $hiddenPresets,
     ];
     $saveResult = save_config($repoRoot, $updates);
     if ($saveResult === true) {
@@ -144,8 +156,17 @@ $baseUrl = 'admin.php?key=' . rawurlencode($key);
 
       <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
         <div class="panel">
-          <h2>Modules</h2>
-          <p class="sub">Custom QR modules (e.g. Phone, custom URL templates) are managed in the main app when access control allows. Use <strong>Updates</strong> and <strong>Authentication</strong> to configure who can access the app and the update endpoint.</p>
+          <h2>Default preset tabs</h2>
+          <p class="sub">Uncheck presets to hide them from the tab bar for <strong>all users</strong>. Changes apply app-wide. At least one must remain visible.</p>
+          <?php
+          $hiddenList = json_decode($config['hidden_presets'] ?? '[]', true);
+          if (!is_array($hiddenList)) $hiddenList = [];
+          foreach ($defaultPresetIds as $pid) {
+              $visible = !in_array($pid, $hiddenList, true);
+              $label = $defaultPresetLabels[$pid] ?? $pid;
+              echo '<div class="checkbox-row"><label><input type="checkbox" name="visible_presets[]" value="' . htmlspecialchars($pid) . '"' . ($visible ? ' checked' : '') . '> ' . htmlspecialchars($label) . '</label></div>';
+          }
+          ?>
         </div>
       </section>
 

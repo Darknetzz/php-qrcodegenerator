@@ -102,7 +102,6 @@ $defaultText = 'https://example.com';
           <button type="button" class="preset-tab" data-preset="custom" role="tab"><svg class="tab-icon" aria-hidden="true"><use href="#icon-custom"/></svg>Custom</button>
           <span id="custom-modules-tabs" class="settings-gated"></span>
           <button type="button" class="preset-tab preset-tab-add settings-gated" id="btn-add-module" title="Add custom module" aria-label="Add custom module">+</button>
-          <button type="button" class="preset-tab preset-tab-customize" id="btn-customize-tabs" title="Show or hide tabs" aria-label="Customize visible tabs">&#8942;</button>
         </div>
         <form id="qr-form" method="get" action="" autocomplete="off">
           <div id="preset-url" class="preset-panel">
@@ -266,17 +265,6 @@ $defaultText = 'https://example.com';
       </div>
     </div>
 
-    <div class="modal-overlay" id="customize-tabs-modal" role="dialog" aria-labelledby="customize-tabs-title" aria-modal="true">
-      <div class="modal">
-        <h3 id="customize-tabs-title">Show or hide tabs</h3>
-        <p class="text-muted modal-desc">Uncheck presets to hide them from the tab bar.</p>
-        <div id="customize-tabs-list"></div>
-        <div class="modal-actions" style="margin-top:1rem;">
-          <button type="button" class="btn btn-primary" id="btn-customize-tabs-save">Save</button>
-        </div>
-      </div>
-    </div>
-
     <div id="settings-gate-message" class="settings-gate-message" style="display:none;" aria-live="polite"></div>
     <div class="foot updates-row settings-gated" id="updates-row" aria-live="polite">
       <span class="version" id="current-version">—</span>
@@ -312,8 +300,10 @@ $defaultText = 'https://example.com';
   var PRESET_LABELS = { url: 'URL', wifi: 'Wi‑Fi', vcard: 'vCard', text: 'Text', email: 'Email', sms: 'SMS', bitcoin: 'Bitcoin', facebook: 'Facebook', pdf: 'PDF', mp3: 'MP3', appstore: 'App Store', image: 'Image', custom: 'Custom' };
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
-  var HIDDEN_PRESETS_KEY = 'qr-hidden-presets';
-
+  var hiddenPresetsFromServer = [];
+  function getHiddenPresets() {
+    return hiddenPresetsFromServer;
+  }
   function getCustomModules() {
     try {
       var raw = localStorage.getItem(CUSTOM_MODULES_KEY);
@@ -324,17 +314,6 @@ $defaultText = 'https://example.com';
   }
   function setCustomModules(arr) {
     try { localStorage.setItem(CUSTOM_MODULES_KEY, JSON.stringify(arr)); } catch (e) {}
-  }
-  function getHiddenPresets() {
-    try {
-      var raw = localStorage.getItem(HIDDEN_PRESETS_KEY);
-      if (!raw) return [];
-      var arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
-  }
-  function setHiddenPresets(arr) {
-    try { localStorage.setItem(HIDDEN_PRESETS_KEY, JSON.stringify(arr)); } catch (e) {}
   }
   function applyDefaultPresetsVisibility() {
     var hidden = getHiddenPresets();
@@ -642,15 +621,28 @@ $defaultText = 'https://example.com';
   form.addEventListener('change', update);
 
   renderCustomModules();
-  var hidden = getHiddenPresets();
-  if (hidden.length >= PRESET_IDS.length) { setHiddenPresets([]); hidden = []; }
-  applyDefaultPresetsVisibility();
-  var saved = null;
-  try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
-  var visibleDefaults = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
-  var allIds = visibleDefaults.concat(getCustomModuleIds());
-  var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (visibleDefaults[0] || 'text');
-  setPreset(initial);
+  function initPresetsVisibility() {
+    var hidden = getHiddenPresets();
+    if (!Array.isArray(hidden)) hidden = [];
+    if (hidden.length >= PRESET_IDS.length) hidden = [];
+    applyDefaultPresetsVisibility();
+    var saved = null;
+    try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
+    var visibleDefaults = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
+    var allIds = visibleDefaults.concat(getCustomModuleIds());
+    var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (visibleDefaults[0] || 'text');
+    setPreset(initial);
+  }
+  fetch('updates.php?action=hidden-presets', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      hiddenPresetsFromServer = (d && d.hiddenPresets) && Array.isArray(d.hiddenPresets) ? d.hiddenPresets : [];
+      initPresetsVisibility();
+    })
+    .catch(function() {
+      hiddenPresetsFromServer = [];
+      initPresetsVisibility();
+    });
 
   function openModuleModalForEdit(m) {
     var titleEl = document.getElementById('custom-module-title');
@@ -723,46 +715,6 @@ $defaultText = 'https://example.com';
     });
   })();
 
-  (function customizeTabsModal() {
-    var modal = document.getElementById('customize-tabs-modal');
-    var listEl = document.getElementById('customize-tabs-list');
-    var btnOpen = document.getElementById('btn-customize-tabs');
-    var btnSave = document.getElementById('btn-customize-tabs-save');
-    if (!modal || !listEl || !btnOpen || !btnSave) return;
-    btnOpen.addEventListener('click', function() {
-      listEl.textContent = '';
-      var hidden = getHiddenPresets();
-      PRESET_IDS.forEach(function(id) {
-        var label = document.createElement('label');
-        label.className = 'checkbox-row';
-        var cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = hidden.indexOf(id) === -1;
-        cb.value = id;
-        cb.id = 'ct-' + id;
-        label.appendChild(cb);
-        label.appendChild(document.createTextNode(' ' + (PRESET_LABELS[id] || id)));
-        listEl.appendChild(label);
-      });
-      modal.classList.add('visible');
-    });
-    btnSave.addEventListener('click', function() {
-      var hidden = [];
-      PRESET_IDS.forEach(function(id) {
-        var cb = document.getElementById('ct-' + id);
-        if (cb && !cb.checked) hidden.push(id);
-      });
-      if (hidden.length >= PRESET_IDS.length) return;
-      setHiddenPresets(hidden);
-      applyDefaultPresetsVisibility();
-      if (hidden.indexOf(currentPreset) !== -1) {
-        var vis = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
-        setPreset(vis[0] || 'text');
-      }
-      modal.classList.remove('visible');
-    });
-    modal.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('visible'); });
-  })();
 })();
 
 (function updatesUi() {

@@ -4,6 +4,7 @@
  * Config is loaded from SQLite (data/config.sqlite), seeded from config.php on first run.
  * Access control: IP allowlist, login (username/password), and upgrade secret are set in admin or config.php.
  *
+ * GET  ?action=hidden-presets → { hiddenPresets } — ids of default presets to hide (for all users)
  * GET  ?action=config-status → { configured } — whether IP/login is set; if set, requires auth (session)
  * POST ?action=login (username, password) → session login; returns { success } or 401
  * POST ?action=logout → clear session
@@ -66,6 +67,15 @@ function require_updates_access(array $config): void {
 }
 
 $action = isset($_REQUEST['action']) ? trim((string) $_REQUEST['action']) : '';
+
+if ($action === 'hidden-presets') {
+    $raw = $config['hidden_presets'] ?? '[]';
+    $list = json_decode($raw, true);
+    if (!is_array($list)) {
+        $list = [];
+    }
+    json_exit(['hiddenPresets' => $list]);
+}
 
 if ($action === 'login') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
