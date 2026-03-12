@@ -252,7 +252,7 @@ $defaultText = 'https://example.com';
         <form id="qr-form" method="get" action="" autocomplete="off">
           <div id="preset-url" class="preset-panel">
             <label for="url">Website URL</label>
-            <input type="url" id="url" placeholder="https://example.com" value="https://example.com">
+            <input type="url" id="url" placeholder="https://example.com" value="https://example.com" autocomplete="off">
           </div>
           <div id="preset-wifi" class="preset-panel active">
             <label for="wifi-ssid">Network name (SSID)</label>
@@ -272,78 +272,78 @@ $defaultText = 'https://example.com';
           </div>
           <div id="preset-vcard" class="preset-panel">
             <label for="vcard-name">Full name</label>
-            <input type="text" id="vcard-name" placeholder="John Doe">
+            <input type="text" id="vcard-name" placeholder="John Doe" autocomplete="off">
             <label for="vcard-org">Organization</label>
-            <input type="text" id="vcard-org" placeholder="Company">
+            <input type="text" id="vcard-org" placeholder="Company" autocomplete="off">
             <label for="vcard-tel">Phone</label>
-            <input type="tel" id="vcard-tel" placeholder="+1 234 567 8900">
+            <input type="tel" id="vcard-tel" placeholder="+1 234 567 8900" autocomplete="off">
             <label for="vcard-email">Email</label>
-            <input type="email" id="vcard-email" placeholder="john@example.com">
+            <input type="email" id="vcard-email" placeholder="john@example.com" autocomplete="off">
           </div>
           <div id="preset-text" class="preset-panel">
             <label for="text">Plain text</label>
-            <textarea id="text" name="text" placeholder="Enter any text..."></textarea>
+            <textarea id="text" name="text" placeholder="Enter any text..." autocomplete="off"></textarea>
           </div>
           <div id="preset-email" class="preset-panel">
             <label for="email-addr">Email address</label>
-            <input type="email" id="email-addr" placeholder="you@example.com">
+            <input type="email" id="email-addr" placeholder="you@example.com" autocomplete="off">
             <label for="email-subject">Subject</label>
-            <input type="text" id="email-subject" placeholder="Optional">
+            <input type="text" id="email-subject" placeholder="Optional" autocomplete="off">
             <label for="email-body">Body</label>
-            <textarea id="email-body" placeholder="Optional" rows="3"></textarea>
+            <textarea id="email-body" placeholder="Optional" rows="3" autocomplete="off"></textarea>
           </div>
           <div id="preset-sms" class="preset-panel">
             <label for="sms-number">Phone number</label>
-            <input type="tel" id="sms-number" placeholder="+1234567890">
+            <input type="tel" id="sms-number" placeholder="+1234567890" autocomplete="off">
             <label for="sms-message">Message</label>
-            <textarea id="sms-message" placeholder="Pre-filled message (optional)" rows="3"></textarea>
+            <textarea id="sms-message" placeholder="Pre-filled message (optional)" rows="3" autocomplete="off"></textarea>
           </div>
           <div id="preset-bitcoin" class="preset-panel">
             <label for="btc-address">Bitcoin address</label>
-            <input type="text" id="btc-address" placeholder="bc1q... or 1...">
+            <input type="text" id="btc-address" placeholder="bc1q... or 1..." autocomplete="off">
             <label for="btc-amount">Amount (BTC, optional)</label>
-            <input type="text" id="btc-amount" placeholder="0.01">
+            <input type="text" id="btc-amount" placeholder="0.01" autocomplete="off">
             <label for="btc-label">Label (optional)</label>
-            <input type="text" id="btc-label" placeholder="Payment for...">
+            <input type="text" id="btc-label" placeholder="Payment for..." autocomplete="off">
           </div>
           <div id="preset-facebook" class="preset-panel">
             <label for="facebook-url">Facebook page or profile URL</label>
-            <input type="url" id="facebook-url" placeholder="https://www.facebook.com/...">
+            <input type="url" id="facebook-url" placeholder="https://www.facebook.com/..." autocomplete="off">
           </div>
           <div id="preset-pdf" class="preset-panel">
             <label for="pdf-url">Link to PDF file</label>
-            <input type="url" id="pdf-url" placeholder="https://example.com/document.pdf">
+            <input type="url" id="pdf-url" placeholder="https://example.com/document.pdf" autocomplete="off">
           </div>
           <div id="preset-mp3" class="preset-panel">
             <label for="mp3-url">Link to audio file (MP3, etc.)</label>
-            <input type="url" id="mp3-url" placeholder="https://example.com/audio.mp3">
+            <input type="url" id="mp3-url" placeholder="https://example.com/audio.mp3" autocomplete="off">
           </div>
           <div id="preset-appstore" class="preset-panel">
             <label for="appstore-url">App store or play store URL</label>
-            <input type="url" id="appstore-url" placeholder="https://apps.apple.com/... or https://play.google.com/...">
+            <input type="url" id="appstore-url" placeholder="https://apps.apple.com/... or https://play.google.com/..." autocomplete="off">
           </div>
           <div id="preset-image" class="preset-panel">
             <label for="image-url">Link to image</label>
-            <input type="url" id="image-url" placeholder="https://example.com/image.png">
+            <input type="url" id="image-url" placeholder="https://example.com/image.png" autocomplete="off">
           </div>
           <div id="preset-custom" class="preset-panel">
             <label for="custom-text">Raw content (URL, vCard, or any string)</label>
-            <textarea id="custom-text" placeholder="Paste or type any content to encode"></textarea>
+            <textarea id="custom-text" placeholder="Paste or type any content to encode" autocomplete="off"></textarea>
           </div>
 
           <div class="row">
             <div class="field">
               <label for="size">Module size (pixels)</label>
-              <input type="number" id="size" name="size" value="6" min="1" max="20" step="1">
+              <input type="number" id="size" name="size" value="6" min="1" max="20" step="1" autocomplete="off">
             </div>
             <div class="field">
               <label for="margin">Margin (modules)</label>
-              <input type="number" id="margin" name="margin" value="4" min="0" max="20" step="1">
+              <input type="number" id="margin" name="margin" value="4" min="0" max="20" step="1" autocomplete="off">
             </div>
           </div>
 
           <label for="level">Error correction</label>
-          <select id="level" name="level">
+          <select id="level" name="level" autocomplete="off">
             <option value="L">L – Low (~7%)</option>
             <option value="M" selected>M – Medium (~15%)</option>
             <option value="Q">Q – Quartile (~25%)</option>
@@ -355,14 +355,14 @@ $defaultText = 'https://example.com';
               <label>Foreground color</label>
               <div class="color-wrap">
                 <input type="color" id="fg-color" value="#000000" aria-label="Foreground color">
-                <input type="text" id="fg" name="fg" value="#000000" maxlength="7" placeholder="#000000">
+                <input type="text" id="fg" name="fg" value="#000000" maxlength="7" placeholder="#000000" autocomplete="off">
               </div>
             </div>
             <div class="field">
               <label>Background color</label>
               <div class="color-wrap">
                 <input type="color" id="bg-color" value="#ffffff" aria-label="Background color">
-                <input type="text" id="bg" name="bg" value="#ffffff" maxlength="7" placeholder="#ffffff">
+                <input type="text" id="bg" name="bg" value="#ffffff" maxlength="7" placeholder="#ffffff" autocomplete="off">
               </div>
             </div>
           </div>
