@@ -662,8 +662,11 @@ $defaultText = 'https://example.com';
         if (r.status === 401 || r.status === 403) {
           var btnLogout = document.getElementById('btn-logout');
           if (btnLogout) btnLogout.style.display = 'none';
-          showApp();
+          if (onboardingEl) onboardingEl.classList.remove('visible');
+          if (appContentEl) appContentEl.classList.remove('hidden');
+          setGateMessage('');
           setGatedVisible(false);
+          if (versionEl) versionEl.textContent = 'Version — (login to check)';
           setGateMessage(
             'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
             '<div class="login-form"><form id="login-form"><label for="login-username">Username</label><input type="text" id="login-username" name="username" autocomplete="username" required> ' +
