@@ -8,290 +8,10 @@ $defaultText = 'https://example.com';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo htmlspecialchars($title); ?></title>
-  <style>
-    :root {
-      --bg: #0f0f12;
-      --surface: #18181c;
-      --border: #2a2a32;
-      --text: #e4e4e7;
-      --muted: #71717a;
-      --accent: #22c55e;
-      --accent-hover: #16a34a;
-      --input-bg: #27272a;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-    .wrap {
-      max-width: 56rem;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
-    }
-    h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin: 0 0 0.5rem;
-      letter-spacing: -0.02em;
-    }
-    .tagline {
-      color: var(--muted);
-      margin: 0 0 2rem;
-      font-size: 0.95rem;
-    }
-    .grid {
-      display: grid;
-      gap: 2rem;
-    }
-    @media (min-width: 768px) {
-      .grid { grid-template-columns: 1fr 320px; }
-    }
-    .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-    }
-    .panel h2 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin: 0 0 1rem;
-      color: var(--text);
-    }
-    label {
-      display: block;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 0.35rem;
-    }
-    input[type="text"],
-    input[type="number"],
-    input[type="url"],
-    input[type="email"],
-    input[type="tel"],
-    textarea {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-    }
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-    input[type="text"]:focus,
-    input[type="number"]:focus,
-    input[type="url"]:focus,
-    input[type="email"]:focus,
-    input[type="tel"]:focus,
-    textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
-    }
-    .row {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .field { flex: 1 1 120px; min-width: 0; }
-    .color-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    input[type="color"] {
-      width: 2.5rem;
-      height: 2.25rem;
-      padding: 2px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--input-bg);
-      cursor: pointer;
-    }
-    input[type="color"] + input[type="text"] {
-      flex: 1;
-      margin-bottom: 0;
-      font-family: ui-monospace, monospace;
-    }
-    select {
-      width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-      cursor: pointer;
-    }
-    .preview-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 240px;
-      padding: 1.5rem;
-      background: #fff;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .preview-wrap img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-    }
-    .preview-placeholder {
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    .actions {
-      margin-top: 1.25rem;
-    }
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: var(--input-bg);
-    }
-    .btn-group .btn {
-      width: 100%;
-      box-sizing: border-box;
-      border-radius: 0;
-      border: none;
-      border-bottom: 1px solid var(--border);
-    }
-    .btn-group .btn:last-child {
-      border-bottom: none;
-    }
-    .btn-group .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn-group .btn-primary:hover {
-      background: var(--accent-hover);
-      color: #fff;
-    }
-    .btn-icon { width: 1.1em; height: 1.1em; margin-right: 0.4rem; flex-shrink: 0; }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 1.1rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      border-radius: 8px;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      font-family: inherit;
-      transition: background 0.15s, color 0.15s;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background: var(--accent-hover);
-      color: #fff;
-    }
-    .btn-secondary {
-      background: var(--input-bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover {
-      background: var(--border);
-      color: var(--text);
-    }
-    .foot {
-      margin-top: 2.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-    .foot a { color: var(--accent); }
-
-    .preset-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .preset-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.45rem 0.75rem;
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--muted);
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: color 0.15s, border-color 0.15s, background 0.15s;
-    }
-    .preset-tab .tab-icon { width: 1.1em; height: 1.1em; flex-shrink: 0; opacity: 0.9; }
-    .label-icon { display: inline-block; width: 1em; height: 1em; margin-right: 0.4rem; vertical-align: -0.15em; opacity: 0.85; }
-    label { display: flex; align-items: center; }
-    .preset-tab:hover { color: var(--text); border-color: var(--muted); }
-    .preset-tab-add { font-size: 1.2rem; padding: 0.25em 0.5em; min-width: 2em; }
-    .preset-tab-custom-wrap { display: inline-flex; align-items: center; gap: 0.15em; }
-    .preset-tab-custom-wrap .preset-tab { flex: 1; }
-    .preset-tab-custom-del { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0 0.2em; font-size: 1rem; line-height: 1; border-radius: 2px; }
-    .preset-tab-custom-del:hover { color: var(--text); background: var(--border); }
-    .preset-tab.active {
-      color: var(--accent);
-      border-color: var(--accent);
-      background: rgba(34, 197, 94, 0.1);
-    }
-    .preset-panel { display: none; }
-    .preset-panel.active { display: block; }
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
-    .modal-overlay.visible { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; max-width: 24rem; width: 90%; }
-    .modal h3 { margin: 0 0 0.75rem; font-size: 1rem; }
-    .modal label { display: block; margin-top: 0.5rem; font-size: 0.9rem; }
-    .modal input { width: 100%; margin-top: 0.25rem; box-sizing: border-box; }
-    .modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
-    .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-    .checkbox-row input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
-    .checkbox-row label { margin: 0; cursor: pointer; }
-    .updates-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      margin-top: 0.75rem;
-    }
-    .updates-row .btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
-    .text-muted { color: var(--muted); }
-    .updates-row .version { color: var(--muted); font-size: 0.85rem; }
-    .updates-row .update-msg { font-size: 0.85rem; }
-    .updates-row .update-msg.has-update { color: var(--accent); }
-    .updates-row .update-msg.error { color: #f87171; }
-    .updates-row .update-msg.loading { color: var(--muted); }
-  </style>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;pointer-events:none" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true">
     <defs>
       <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
       <symbol id="icon-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1.5"/></symbol>
@@ -465,7 +185,7 @@ $defaultText = 'https://example.com';
       <div class="panel">
         <h2>Preview</h2>
         <div class="preview-wrap">
-          <img id="preview" src="" alt="QR code preview" style="display:none;">
+          <img id="preview" src="" alt="QR code preview">
           <span id="preview-placeholder" class="preview-placeholder">Enter content to see preview</span>
         </div>
         <div class="actions">
@@ -484,7 +204,7 @@ $defaultText = 'https://example.com';
     <div class="modal-overlay" id="custom-module-modal" role="dialog" aria-labelledby="custom-module-title" aria-modal="true">
       <div class="modal">
         <h3 id="custom-module-title">Add custom module</h3>
-        <p class="text-muted" style="font-size:0.85rem;margin:0 0 0.5rem;">Define a preset with a format string. Use <code>%s</code> for each field (e.g. <code>tel:%s</code> or <code>https://example.com?id=%s</code>).</p>
+        <p class="text-muted modal-desc">Define a preset with a format string. Use <code>%s</code> for each field (e.g. <code>tel:%s</code> or <code>https://example.com?id=%s</code>).</p>
         <form id="add-module-form">
           <label for="module-name">Name</label>
           <input type="text" id="module-name" placeholder="e.g. Phone" required autocomplete="off">
@@ -506,8 +226,8 @@ $defaultText = 'https://example.com';
         <svg class="btn-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>Check for updates
       </button>
       <span class="update-msg" id="update-msg"></span>
-      <button type="button" class="btn btn-primary" id="btn-upgrade" style="display:none;"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
-      <a href="admin.php" class="btn btn-secondary" style="margin-left:auto;">Admin</a>
+      <button type="button" class="btn btn-primary" id="btn-upgrade"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade (git pull)</button>
+      <a href="admin.php" class="btn btn-secondary admin-link">Admin</a>
     </div>
   </div>
 
