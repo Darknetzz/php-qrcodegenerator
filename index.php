@@ -262,6 +262,19 @@ $defaultText = 'https://example.com';
     .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
     .checkbox-row input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; }
     .checkbox-row label { margin: 0; cursor: pointer; }
+    .updates-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+    .updates-row .btn { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+    .updates-row .version { color: var(--muted); font-size: 0.85rem; }
+    .updates-row .update-msg { font-size: 0.85rem; }
+    .updates-row .update-msg.has-update { color: var(--accent); }
+    .updates-row .update-msg.error { color: #f87171; }
+    .updates-row .update-msg.loading { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -287,6 +300,8 @@ $defaultText = 'https://example.com';
       <symbol id="icon-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.65 0-.43-.18-.84-.44-1.12-.29-.29-.44-.65-.44-1.12a1.65 1.65 0 0 1 1.65-1.65H20c0-1.1-.74-2.07-1.76-2.41a7 7 0 0 0-.38-2.07C17.07 3.3 14.93 2 12 2z"/></symbol>
       <symbol id="icon-size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></symbol>
       <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></symbol>
+      <symbol id="icon-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></symbol>
     </defs>
   </svg>
   <div class="wrap">
@@ -450,6 +465,14 @@ $defaultText = 'https://example.com';
       Uses <a href="https://github.com/chillerlan/php-qrcode" target="_blank" rel="noopener">chillerlan/php-qrcode</a> (MIT).
       No data is stored on the server. For very long content, use the download buttons.
     </p>
+    <div class="foot updates-row" id="updates-row" aria-live="polite">
+      <span class="version" id="current-version">—</span>
+      <button type="button" class="btn btn-secondary" id="btn-check-updates" aria-label="Check for updates">
+        <svg class="btn-icon" aria-hidden="true"><use href="#icon-refresh"/></svg>Check for updates
+      </button>
+      <span class="update-msg" id="update-msg"></span>
+      <a href="#" class="btn btn-primary" id="btn-upgrade" style="display:none;"><svg class="btn-icon" aria-hidden="true"><use href="#icon-arrow-up"/></svg>Upgrade</a>
+    </div>
   </div>
 
   <script>
