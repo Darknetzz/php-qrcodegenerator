@@ -72,6 +72,9 @@ $defaultText = 'https://example.com';
     }
     input[type="text"],
     input[type="number"],
+    input[type="url"],
+    input[type="email"],
+    input[type="tel"],
     textarea {
       width: 100%;
       padding: 0.6rem 0.75rem;
@@ -86,7 +89,12 @@ $defaultText = 'https://example.com';
       min-height: 100px;
       resize: vertical;
     }
-    input:focus, textarea:focus {
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    input[type="url"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
@@ -568,7 +576,7 @@ $defaultText = 'https://example.com';
       dlSvg.href = '#';
       return;
     }
-    var url = buildUrl('png');
+    var url = buildUrl('png') + '&_=' + Date.now();
     preview.src = url;
     preview.style.display = 'block';
     placeholder.style.display = 'none';
