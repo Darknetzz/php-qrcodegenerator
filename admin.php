@@ -68,7 +68,8 @@ if (!$allowed) {
     exit;
 }
 
-$baseUrl = $key !== '' ? 'admin.php?key=' . rawurlencode($key) : 'admin.php';
+// When key is empty (access via login session), use 'admin.php?' so '&tab=...' yields valid URLs
+$baseUrl = $key !== '' ? 'admin.php?key=' . rawurlencode($key) : 'admin.php?';
 $defaultPresetIds = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
 $defaultPresetLabels = ['url' => 'URL', 'wifi' => 'Wi‑Fi', 'vcard' => 'vCard', 'text' => 'Text', 'email' => 'Email', 'sms' => 'SMS', 'bitcoin' => 'Bitcoin', 'facebook' => 'Facebook', 'pdf' => 'PDF', 'mp3' => 'MP3', 'appstore' => 'App Store', 'image' => 'Image', 'custom' => 'Custom'];
 
