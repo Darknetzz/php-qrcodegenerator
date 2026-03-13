@@ -355,22 +355,31 @@ if (!in_array($tab, $validTabs, true)) {
     <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
       <div class="panel">
         <h2 class="admin-module-heading">Custom modules <button type="button" class="admin-btn-add-module" id="admin-btn-add-module" aria-label="Add custom module">+ Add</button></h2>
-        <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
-        <?php if (count($adminModules) > 0) { ?>
-        <ul class="admin-module-list">
+        <p class="sub">These modules appear in the main app for all users. Drag to reorder. Uncheck to hide from the tab bar. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
+        <?php
+        $hiddenCustomList = json_decode($config['hidden_custom_modules'] ?? '[]', true);
+        if (!is_array($hiddenCustomList)) {
+            $hiddenCustomList = [];
+        }
+        if (count($adminModules) > 0) { ?>
+        <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-custom-modules-form">
+          <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+          <input type="hidden" name="save_custom_modules_visibility" value="1">
+          <ul class="admin-module-list admin-draggable-list" id="admin-module-list" aria-label="Custom modules order">
           <?php foreach ($adminModules as $idx => $m) {
               $mid = isset($m['id']) ? $m['id'] : '';
               $mname = isset($m['name']) ? $m['name'] : '';
               $mformat = isset($m['format']) ? $m['format'] : '';
               $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
-              $canUp = $idx > 0;
-              $canDown = $idx < count($adminModules) - 1;
+              $visible = !in_array($mid, $hiddenCustomList, true);
           ?>
-          <li class="admin-module-item">
-            <span class="admin-module-order">
-              <?php if ($canUp) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_module_id=<?php echo rawurlencode($mid); ?>&amp;move_module_direction=up" class="admin-move-btn" aria-label="Move up">↑</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
-              <?php if ($canDown) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_module_id=<?php echo rawurlencode($mid); ?>&amp;move_module_direction=down" class="admin-move-btn" aria-label="Move down">↓</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
-            </span>
+          <li class="admin-module-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($mid); ?>">
+            <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
+            <label class="admin-module-visible">
+              <input type="checkbox" name="visible_custom_modules[]" value="<?php echo htmlspecialchars($mid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
+              <span class="admin-module-visible-label">Show</span>
+            </label>
+            <input type="hidden" name="module_order[]" value="<?php echo htmlspecialchars($mid); ?>">
             <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
             <span class="admin-module-actions">
               <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
@@ -383,6 +392,8 @@ if (!in_array($tab, $validTabs, true)) {
           </li>
           <?php } ?>
         </ul>
+        <button type="submit" class="btn admin-save-modules">Save order &amp; visibility</button>
+        </form>
         <?php } else { ?>
         <p class="sub">No custom modules yet. Click <strong>+ Add</strong> to create one.</p>
         <?php } ?>
@@ -440,28 +451,76 @@ if (!in_array($tab, $validTabs, true)) {
           cancel.addEventListener('click', closeModal);
           modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
         })();
+        (function dragDrop() {
+          var lists = document.querySelectorAll('.admin-draggable-list');
+          lists.forEach(function(list) {
+            var items = list.querySelectorAll('.admin-draggable-item');
+            var dragged = null;
+            items.forEach(function(item) {
+              item.setAttribute('draggable', 'true');
+              var handle = item.querySelector('.admin-drag-handle');
+              function onDragStart(e) {
+                if (e.target.closest('a, button, form, input')) return;
+                dragged = item;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', '');
+                item.classList.add('admin-dragging');
+              }
+              function onDragEnd() {
+                item.classList.remove('admin-dragging');
+                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+                dragged = null;
+              }
+              (handle || item).addEventListener('dragstart', onDragStart);
+              item.addEventListener('dragend', onDragEnd);
+            });
+            list.addEventListener('dragover', function(e) {
+              if (!dragged) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              var target = e.target.closest('.admin-draggable-item');
+              if (target && target !== dragged) {
+                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+                target.classList.add('admin-drag-over');
+              }
+            });
+            list.addEventListener('dragleave', function(e) {
+              if (!e.relatedTarget || !list.contains(e.relatedTarget)) {
+                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+              }
+            });
+            list.addEventListener('drop', function(e) {
+              e.preventDefault();
+              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+              var target = e.target.closest('.admin-draggable-item');
+              if (dragged && target && target !== dragged) {
+                var all = list.querySelectorAll('.admin-draggable-item');
+                var idx = Array.prototype.indexOf.call(all, target);
+                if (idx >= 0) {
+                  list.insertBefore(dragged, target);
+                }
+              }
+              dragged = null;
+            });
+          });
+        })();
       </script>
       <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
         <input type="hidden" name="tab" value="modules">
         <div class="panel">
           <h2>Default preset tabs</h2>
-          <p class="sub">Order with ↑↓. Uncheck to hide from the tab bar for <strong>all users</strong>. At least one must remain visible.</p>
-          <ul class="admin-preset-order-list">
+          <p class="sub">Drag to reorder. Uncheck to hide from the tab bar for <strong>all users</strong>. At least one must remain visible.</p>
+          <ul class="admin-preset-order-list admin-draggable-list" id="admin-preset-order-list" aria-label="Default presets order">
           <?php
           $hiddenList = json_decode($config['hidden_presets'] ?? '[]', true);
           if (!is_array($hiddenList)) $hiddenList = [];
           foreach ($presetOrder as $pidx => $pid) {
               $visible = !in_array($pid, $hiddenList, true);
               $label = $defaultPresetLabels[$pid] ?? $pid;
-              $canUp = $pidx > 0;
-              $canDown = $pidx < count($presetOrder) - 1;
           ?>
-            <li class="admin-preset-order-item">
-              <span class="admin-module-order">
-                <?php if ($canUp) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_preset_id=<?php echo rawurlencode($pid); ?>&amp;move_preset_direction=up" class="admin-move-btn" aria-label="Move up">↑</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
-                <?php if ($canDown) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_preset_id=<?php echo rawurlencode($pid); ?>&amp;move_preset_direction=down" class="admin-move-btn" aria-label="Move down">↓</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
-              </span>
+            <li class="admin-preset-order-item admin-draggable-item" data-preset-id="<?php echo htmlspecialchars($pid); ?>">
+              <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
               <label class="admin-preset-checkbox">
                 <input type="checkbox" name="visible_presets[]" value="<?php echo htmlspecialchars($pid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
                 <?php echo htmlspecialchars($label); ?>

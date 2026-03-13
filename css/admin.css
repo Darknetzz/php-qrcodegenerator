@@ -253,6 +253,42 @@ body.admin-tab-auth .admin-save-modules {
   border-color: #f87171;
 }
 
+.admin-drag-handle {
+  cursor: grab;
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 0.2rem 0.35rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.admin-drag-handle:active {
+  cursor: grabbing;
+}
+
+.admin-draggable-item.admin-dragging {
+  opacity: 0.6;
+}
+
+.admin-draggable-item.admin-drag-over {
+  outline: 2px solid var(--accent, #22c55e);
+  outline-offset: 2px;
+}
+
+.admin-module-visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.admin-module-visible-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .admin-module-order {
   display: flex;
   flex-direction: column;
