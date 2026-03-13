@@ -262,6 +262,9 @@ $validTabs = ['updates', 'auth', 'modules'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'updates';
 }
+
+// Start session before any output so the CSRF token cookie is sent and survives the next POST
+csrf_token('admin_csrf');
 ?>
 <!DOCTYPE html>
 <html lang="en">
