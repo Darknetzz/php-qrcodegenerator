@@ -61,7 +61,7 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 
 ### Docker (recommended)
 
-Pre-built images are published to **Docker Hub** (`docker.io/darknetz/php-qrcodegenerator`) and **GitHub Container Registry** (`ghcr.io/darknetzz/php-qrcodegenerator`) on each version tag.
+Pre-built images are published to **Docker Hub** (`docker.io/darknetz/php-qrcodegenerator`) and **GitHub Container Registry** (`ghcr.io/Darknetzz/php-qrcodegenerator`) on each version tag.
 
 1. **Pull the image** (either registry):
    ```bash
