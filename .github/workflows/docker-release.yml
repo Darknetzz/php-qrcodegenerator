@@ -45,7 +45,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/php-qrcodegenerator:${{ steps.version.outputs.version }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/php-qrcodegenerator:v${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository }}:v${{ steps.version.outputs.version }}
+            darknetz/php-qrcodegenerator:${{ steps.version.outputs.version }}
+            darknetz/php-qrcodegenerator:v${{ steps.version.outputs.version }}
+            ghcr.io/darknetz/php-qrcodegenerator:${{ steps.version.outputs.version }}
+            ghcr.io/darknetz/php-qrcodegenerator:v${{ steps.version.outputs.version }}
