@@ -467,13 +467,15 @@ if (!in_array($tab, $validTabs, true)) {
             var items = list.querySelectorAll('.admin-draggable-item');
             var dragged = null;
             items.forEach(function(item) {
-              item.setAttribute('draggable', 'true');
               var handle = item.querySelector('.admin-drag-handle');
+              if (!handle) return;
+              item.setAttribute('draggable', 'true');
               function onDragStart(e) {
+                if (!handle.contains(e.target) && !item.contains(e.target)) return;
                 if (e.target.closest('a, button, form, input')) return;
                 dragged = item;
                 e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', '');
+                e.dataTransfer.setData('text/plain', item.getAttribute('data-module-id') || item.getAttribute('data-preset-id') || '');
                 item.classList.add('admin-dragging');
               }
               function onDragEnd() {
@@ -481,7 +483,7 @@ if (!in_array($tab, $validTabs, true)) {
                 list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
                 dragged = null;
               }
-              (handle || item).addEventListener('dragstart', onDragStart);
+              item.addEventListener('dragstart', onDragStart);
               item.addEventListener('dragend', onDragEnd);
             });
             list.addEventListener('dragover', function(e) {
