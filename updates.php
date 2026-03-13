@@ -12,18 +12,27 @@
  * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
+require_once __DIR__ . '/load_config.php';
+security_headers();
 header('Content-Type: application/json; charset=utf-8');
 
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
 if (session_status() === PHP_SESSION_NONE) {
-    session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+    session_start([
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'Lax',
+        'cookie_secure' => $isHttps,
+    ]);
 }
 
 $repoRoot = realpath(__DIR__);
 if ($repoRoot === false) {
-    json_exit(['error' => 'Invalid app root'], 500);
+    http_response_code(500);
+    echo json_encode(['error' => 'Invalid app root'], JSON_UNESCAPED_SLASHES);
+    exit;
 }
-
-require_once $repoRoot . '/load_config.php';
 $config = load_config($repoRoot);
 $isGit = is_dir($repoRoot . '/.git');
 
@@ -97,6 +106,7 @@ if ($action === 'login') {
         http_response_code(401);
         json_exit(['error' => 'Invalid username or password']);
     }
+    session_regenerate_id(true);
     $_SESSION['qr_authenticated'] = true;
     json_exit(['success' => true]);
 }

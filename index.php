@@ -291,8 +291,8 @@ $defaultText = 'https://example.com';
   </div>
   </div>
 
-  <script>window.SERVER_CUSTOM_MODULES = <?php echo json_encode($serverCustomModules); ?>;</script>
-  <script>window.PRESET_ORDER = <?php echo json_encode($presetOrder); ?>;</script>
+  <script>window.SERVER_CUSTOM_MODULES = <?php echo json_encode($serverCustomModules, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+  <script>window.PRESET_ORDER = <?php echo json_encode($presetOrder, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
   <script>
 (function() {
   var form = document.getElementById('qr-form');
@@ -840,7 +840,8 @@ $defaultText = 'https://example.com';
           if (versionEl) versionEl.textContent = 'Version — (login to check)';
           setGateMessage(
             'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
-            '<div class="login-form"><form id="login-form"><label for="login-username">Username</label><input type="text" id="login-username" name="username" autocomplete="username" required> ' +
+            '<div class="login-form"><form id="login-form" action="updates.php" method="post" autocomplete="off">' +
+            '<label for="login-username">Username</label><input type="text" id="login-username" name="username" autocomplete="username" required> ' +
             '<label for="login-password">Password</label><input type="password" id="login-password" name="password" autocomplete="current-password" required> ' +
             '<div class="login-actions"><button type="submit" class="btn btn-primary">Log in</button></div><div id="login-form-error" class="login-error"></div></form></div>',
             ''
