@@ -41,6 +41,58 @@ if (!is_array($adminModules)) {
     $adminModules = [];
 }
 
+$presetOrder = json_decode($config['preset_order'] ?? '[]', true);
+if (!is_array($presetOrder) || count($presetOrder) !== count($defaultPresetIds)) {
+    $presetOrder = $defaultPresetIds;
+} else {
+    $presetOrder = array_values(array_intersect($presetOrder, $defaultPresetIds));
+    $presetOrder = array_merge($presetOrder, array_diff($defaultPresetIds, $presetOrder));
+}
+
+// Handle move via GET (avoids nested forms)
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isset($_GET['move_module_id'], $_GET['move_module_direction']) && is_string($_GET['move_module_id']) && $_GET['move_module_id'] !== '') {
+    $moveId = $_GET['move_module_id'];
+    $dir = $_GET['move_module_direction'] === 'down' ? 1 : -1;
+    $idx = null;
+    foreach ($adminModules as $i => $m) {
+        if (isset($m['id']) && $m['id'] === $moveId) {
+            $idx = $i;
+            break;
+        }
+    }
+    if ($idx !== null && (($dir === -1 && $idx > 0) || ($dir === 1 && $idx < count($adminModules) - 1))) {
+        $swap = $idx + $dir;
+        $tmp = $adminModules[$idx];
+        $adminModules[$idx] = $adminModules[$swap];
+        $adminModules[$swap] = $tmp;
+        $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
+        if ($saveResult === true) {
+            header('Location: ' . $baseUrl . '&tab=modules');
+            exit;
+        }
+    }
+}
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isset($_GET['move_preset_id'], $_GET['move_preset_direction']) && is_string($_GET['move_preset_id']) && $_GET['move_preset_id'] !== '') {
+    $moveId = $_GET['move_preset_id'];
+    $dir = $_GET['move_preset_direction'] === 'down' ? 1 : -1;
+    $order = json_decode($config['preset_order'] ?? '[]', true);
+    if (!is_array($order) || count($order) !== count($defaultPresetIds)) {
+        $order = $defaultPresetIds;
+    }
+    $idx = array_search($moveId, $order, true);
+    if ($idx !== false && (($dir === -1 && $idx > 0) || ($dir === 1 && $idx < count($order) - 1))) {
+        $swap = $idx + $dir;
+        $tmp = $order[$idx];
+        $order[$idx] = $order[$swap];
+        $order[$swap] = $tmp;
+        $saveResult = save_config($repoRoot, ['preset_order' => json_encode($order)]);
+        if ($saveResult === true) {
+            header('Location: ' . $baseUrl . '&tab=modules');
+            exit;
+        }
+    }
+}
+
 $editModule = null;
 if (isset($_GET['edit']) && is_string($_GET['edit']) && $_GET['edit'] !== '') {
     foreach ($adminModules as $m) {
@@ -136,7 +188,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if ($fromPresetsForm) {
-        $updates = array_merge($config, ['hidden_presets' => $hiddenPresets]);
+        $presetOrder = isset($_POST['preset_order']) && is_array($_POST['preset_order']) ? $_POST['preset_order'] : [];
+        $presetOrder = array_values(array_filter(array_map('trim', $presetOrder)));
+        $presetOrder = array_values(array_intersect($presetOrder, $defaultPresetIds));
+        if (count($presetOrder) !== count($defaultPresetIds)) {
+            $presetOrder = $defaultPresetIds;
+        }
+        $updates = array_merge($config, [
+            'hidden_presets' => $hiddenPresets,
+            'preset_order' => json_encode($presetOrder),
+        ]);
     } else {
         $updates = [
             'update_repo' => trim($_POST['update_repo'] ?? ''),
@@ -254,13 +315,19 @@ if (!in_array($tab, $validTabs, true)) {
         <p class="sub">These modules appear in the main app for all users. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
         <?php if (count($adminModules) > 0) { ?>
         <ul class="admin-module-list">
-          <?php foreach ($adminModules as $m) {
+          <?php foreach ($adminModules as $idx => $m) {
               $mid = isset($m['id']) ? $m['id'] : '';
               $mname = isset($m['name']) ? $m['name'] : '';
               $mformat = isset($m['format']) ? $m['format'] : '';
               $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
+              $canUp = $idx > 0;
+              $canDown = $idx < count($adminModules) - 1;
           ?>
           <li class="admin-module-item">
+            <span class="admin-module-order">
+              <?php if ($canUp) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_module_id=<?php echo rawurlencode($mid); ?>&amp;move_module_direction=up" class="admin-move-btn" aria-label="Move up">↑</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
+              <?php if ($canDown) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_module_id=<?php echo rawurlencode($mid); ?>&amp;move_module_direction=down" class="admin-move-btn" aria-label="Move down">↓</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
+            </span>
             <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
             <span class="admin-module-actions">
               <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
@@ -336,16 +403,30 @@ if (!in_array($tab, $validTabs, true)) {
         <input type="hidden" name="tab" value="modules">
         <div class="panel">
           <h2>Default preset tabs</h2>
-          <p class="sub">Uncheck presets to hide them from the tab bar for <strong>all users</strong>. Changes apply app-wide. At least one must remain visible.</p>
+          <p class="sub">Order with ↑↓. Uncheck to hide from the tab bar for <strong>all users</strong>. At least one must remain visible.</p>
+          <ul class="admin-preset-order-list">
           <?php
           $hiddenList = json_decode($config['hidden_presets'] ?? '[]', true);
           if (!is_array($hiddenList)) $hiddenList = [];
-          foreach ($defaultPresetIds as $pid) {
+          foreach ($presetOrder as $pidx => $pid) {
               $visible = !in_array($pid, $hiddenList, true);
               $label = $defaultPresetLabels[$pid] ?? $pid;
-              echo '<div class="checkbox-row"><label><input type="checkbox" name="visible_presets[]" value="' . htmlspecialchars($pid) . '"' . ($visible ? ' checked' : '') . '> ' . htmlspecialchars($label) . '</label></div>';
-          }
+              $canUp = $pidx > 0;
+              $canDown = $pidx < count($presetOrder) - 1;
           ?>
+            <li class="admin-preset-order-item">
+              <span class="admin-module-order">
+                <?php if ($canUp) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_preset_id=<?php echo rawurlencode($pid); ?>&amp;move_preset_direction=up" class="admin-move-btn" aria-label="Move up">↑</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
+                <?php if ($canDown) { ?><a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;move_preset_id=<?php echo rawurlencode($pid); ?>&amp;move_preset_direction=down" class="admin-move-btn" aria-label="Move down">↓</a><?php } else { ?><span class="admin-move-placeholder"></span><?php } ?>
+              </span>
+              <label class="admin-preset-checkbox">
+                <input type="checkbox" name="visible_presets[]" value="<?php echo htmlspecialchars($pid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
+                <?php echo htmlspecialchars($label); ?>
+              </label>
+              <input type="hidden" name="preset_order[]" value="<?php echo htmlspecialchars($pid); ?>">
+            </li>
+          <?php } ?>
+          </ul>
         </div>
         <button type="submit" class="btn admin-save-modules">Save</button>
       </form>

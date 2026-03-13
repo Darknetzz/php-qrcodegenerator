@@ -249,6 +249,63 @@ body.admin-tab-auth .admin-save-modules {
   border-color: #f87171;
 }
 
+.admin-module-order {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.admin-move-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.25rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.admin-move-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.admin-move-placeholder {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.25rem;
+}
+
+.admin-preset-order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-preset-order-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-preset-order-item:last-child {
+  border-bottom: none;
+}
+
+.admin-preset-checkbox {
+  flex: 1;
+  margin: 0;
+  cursor: pointer;
+}
+
 .admin-module-form-title {
   margin: 1rem 0 0.5rem;
   font-size: 0.95rem;

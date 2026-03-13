@@ -7,6 +7,10 @@ $serverCustomModules = json_decode($config['custom_modules'] ?? '[]', true);
 if (!is_array($serverCustomModules)) {
     $serverCustomModules = [];
 }
+$presetOrder = json_decode($config['preset_order'] ?? '[]', true);
+if (!is_array($presetOrder) || count($presetOrder) === 0) {
+    $presetOrder = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+}
 
 $title = 'QR Code Generator';
 $defaultText = 'https://example.com';
@@ -286,6 +290,7 @@ $defaultText = 'https://example.com';
   </div>
 
   <script>window.SERVER_CUSTOM_MODULES = <?php echo json_encode($serverCustomModules); ?>;</script>
+  <script>window.PRESET_ORDER = <?php echo json_encode($presetOrder); ?>;</script>
   <script>
 (function() {
   var form = document.getElementById('qr-form');
@@ -304,6 +309,7 @@ $defaultText = 'https://example.com';
   var currentPreset = 'wifi';
 
   var PRESET_IDS = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+  var PRESET_ORDER = window.PRESET_ORDER && window.PRESET_ORDER.length === PRESET_IDS.length ? window.PRESET_ORDER : PRESET_IDS.slice();
   var PRESET_LABELS = { url: 'URL', wifi: 'Wi‑Fi', vcard: 'vCard', text: 'Text', email: 'Email', sms: 'SMS', bitcoin: 'Bitcoin', facebook: 'Facebook', pdf: 'PDF', mp3: 'MP3', appstore: 'App Store', image: 'Image', custom: 'Custom' };
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
@@ -312,6 +318,30 @@ $defaultText = 'https://example.com';
   var serverModuleIds = serverModules.map(function(m) { return m.id; });
   function getHiddenPresets() {
     return hiddenPresetsFromServer;
+  }
+  function applyPresetOrder() {
+    var order = PRESET_ORDER;
+    var tabsContainer = document.querySelector('.preset-tabs');
+    var ref = document.getElementById('custom-modules-tabs');
+    if (tabsContainer && ref) {
+      for (var i = 0; i < order.length; i++) {
+        var tab = tabsContainer.querySelector('.preset-tab[data-preset="' + order[i] + '"]');
+        if (tab) tabsContainer.insertBefore(tab, ref);
+      }
+    }
+    var form = document.getElementById('qr-form');
+    if (form) {
+      var firstPanel = form.querySelector('.preset-panel');
+      if (firstPanel) {
+        for (var j = order.length - 1; j >= 0; j--) {
+          var panel = document.getElementById('preset-' + order[j]);
+          if (panel) {
+            form.insertBefore(panel, firstPanel);
+            firstPanel = panel;
+          }
+        }
+      }
+    }
   }
   function getLocalCustomModules() {
     try {
@@ -335,7 +365,7 @@ $defaultText = 'https://example.com';
   }
   function applyDefaultPresetsVisibility() {
     var hidden = getHiddenPresets();
-    PRESET_IDS.forEach(function(id) {
+    PRESET_ORDER.forEach(function(id) {
       var tab = document.querySelector('.preset-tabs > .preset-tab[data-preset="' + id + '"]');
       var panel = document.getElementById('preset-' + id);
       var isHidden = hidden.indexOf(id) !== -1;
@@ -642,6 +672,7 @@ $defaultText = 'https://example.com';
   form.addEventListener('change', update);
 
   renderCustomModules();
+  applyPresetOrder();
   function initPresetsVisibility() {
     var hidden = getHiddenPresets();
     if (!Array.isArray(hidden)) hidden = [];
@@ -649,7 +680,7 @@ $defaultText = 'https://example.com';
     applyDefaultPresetsVisibility();
     var saved = null;
     try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
-    var visibleDefaults = PRESET_IDS.filter(function(id) { return hidden.indexOf(id) === -1; });
+    var visibleDefaults = PRESET_ORDER.filter(function(id) { return hidden.indexOf(id) === -1; });
     var allIds = visibleDefaults.concat(getCustomModuleIds());
     var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (visibleDefaults[0] || 'text');
     setPreset(initial);
