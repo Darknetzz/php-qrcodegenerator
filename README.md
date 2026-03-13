@@ -86,7 +86,7 @@ Pre-built images are published to **Docker Hub** (`docker.io/darknetz/php-qrcode
 
 Use a specific version tag (e.g. `v1.1.0`) in production instead of `latest`.
 
-**GHCR (ghcr.io):** You don’t create the image in the GitHub UI. It appears automatically when the [release workflow](.github/workflows/docker-release.yml) runs: push a version tag (e.g. `v1.1.0`), and the workflow builds and pushes to both Docker Hub and GHCR. The first push creates the package at [github.com/darknetz?tab=packages](https://github.com/Darknetzz?tab=packages). Ensure the repo secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are set so the workflow can push to both registries. See [AGENTS.md](AGENTS.md#5-docker-images-automatic-if-ci-is-configured).
+**GHCR (ghcr.io):** You don’t create the image in the GitHub UI. It appears automatically when the [release workflow](.github/workflows/docker-release.yml) runs: push a version tag (e.g. `v1.1.0`), and the workflow builds and pushes to both Docker Hub and GHCR. The first push creates the package at [github.com/Darknetzz?tab=packages](https://github.com/Darknetzz?tab=packages). Ensure the repo secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are set so the workflow can push to both registries. See [AGENTS.md](AGENTS.md#5-docker-images-automatic-if-ci-is-configured).
 
 ## Files
 
