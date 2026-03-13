@@ -2,6 +2,9 @@
 /**
  * Copy to config.php. Used to seed the SQLite config on first load (when DB is empty).
  * After that, all changes are made in the admin panel and stored in data/config.sqlite.
+ *
+ * For secure admin access, set admin_secret before first run so you can open admin.php?key=<that_value>.
+ * If both admin_secret and update_secret are empty, the admin panel is not accessible.
  */
 return [
     'update_repo' => 'Darknetzz/php-qrcodegenerator',

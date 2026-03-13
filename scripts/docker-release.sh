@@ -2,7 +2,7 @@
 # Build and push Docker image to Docker Hub and GHCR.
 # Usage: ./scripts/docker-release.sh [VERSION]
 #   VERSION defaults to the first line of VERSION.
-# Requires: DOCKERHUB_IMAGE and GHCR_IMAGE set (e.g. myuser/php-qrcodegenerator, ghcr.io/myorg/php-qrcodegenerator).
+# Requires: DOCKERHUB_IMAGE and GHCR_IMAGE set (or use defaults below).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,8 +18,8 @@ if [[ -z "$VERSION" ]]; then
   exit 1
 fi
 
-: "${DOCKERHUB_IMAGE:?Set DOCKERHUB_IMAGE (e.g. myuser/php-qrcodegenerator)"}"
-: "${GHCR_IMAGE:?Set GHCR_IMAGE (e.g. ghcr.io/myorg/php-qrcodegenerator)"}"
+DOCKERHUB_IMAGE="${DOCKERHUB_IMAGE:-darknetz/php-qrcodegenerator}"
+GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/darknetzz/php-qrcodegenerator}"
 
 TAG="v${VERSION#v}"
 echo "Building and pushing $TAG to Docker Hub and GHCR..."
