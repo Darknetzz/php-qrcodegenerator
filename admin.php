@@ -50,48 +50,20 @@ if (!is_array($presetOrder) || count($presetOrder) !== count($defaultPresetIds))
     $presetOrder = array_merge($presetOrder, array_diff($defaultPresetIds, $presetOrder));
 }
 
-// Handle move via GET (avoids nested forms)
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isset($_GET['move_module_id'], $_GET['move_module_direction']) && is_string($_GET['move_module_id']) && $_GET['move_module_id'] !== '') {
-    $moveId = $_GET['move_module_id'];
-    $dir = $_GET['move_module_direction'] === 'down' ? 1 : -1;
-    $idx = null;
-    foreach ($adminModules as $i => $m) {
-        if (isset($m['id']) && $m['id'] === $moveId) {
-            $idx = $i;
-            break;
-        }
+$customIds = array_filter(array_map(function ($m) { return isset($m['id']) ? $m['id'] : null; }, $adminModules));
+$expectedFullCount = count($defaultPresetIds) + count($customIds);
+$moduleOrderRaw = json_decode($config['module_order'] ?? '[]', true);
+$fullOrder = [];
+if (is_array($moduleOrderRaw) && count($moduleOrderRaw) === $expectedFullCount) {
+    $validIds = array_merge($defaultPresetIds, $customIds);
+    $fullOrder = array_values(array_intersect($moduleOrderRaw, $validIds));
+    if (count($fullOrder) === $expectedFullCount) {
+        $fullOrder = array_merge($fullOrder, array_diff($validIds, $fullOrder));
+    } else {
+        $fullOrder = array_merge($presetOrder, $customIds);
     }
-    if ($idx !== null && (($dir === -1 && $idx > 0) || ($dir === 1 && $idx < count($adminModules) - 1))) {
-        $swap = $idx + $dir;
-        $tmp = $adminModules[$idx];
-        $adminModules[$idx] = $adminModules[$swap];
-        $adminModules[$swap] = $tmp;
-        $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
-        if ($saveResult === true) {
-            header('Location: ' . $baseUrl . '&tab=modules');
-            exit;
-        }
-    }
-}
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' && isset($_GET['move_preset_id'], $_GET['move_preset_direction']) && is_string($_GET['move_preset_id']) && $_GET['move_preset_id'] !== '') {
-    $moveId = $_GET['move_preset_id'];
-    $dir = $_GET['move_preset_direction'] === 'down' ? 1 : -1;
-    $order = json_decode($config['preset_order'] ?? '[]', true);
-    if (!is_array($order) || count($order) !== count($defaultPresetIds)) {
-        $order = $defaultPresetIds;
-    }
-    $idx = array_search($moveId, $order, true);
-    if ($idx !== false && (($dir === -1 && $idx > 0) || ($dir === 1 && $idx < count($order) - 1))) {
-        $swap = $idx + $dir;
-        $tmp = $order[$idx];
-        $order[$idx] = $order[$swap];
-        $order[$swap] = $tmp;
-        $saveResult = save_config($repoRoot, ['preset_order' => json_encode($order)]);
-        if ($saveResult === true) {
-            header('Location: ' . $baseUrl . '&tab=modules');
-            exit;
-        }
-    }
+} else {
+    $fullOrder = array_merge($presetOrder, $customIds);
 }
 
 $editModule = null;
@@ -116,7 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $adminModules = array_values(array_filter($adminModules, function ($m) use ($toDelete) {
             return (isset($m['id']) ? $m['id'] : '') !== $toDelete;
         }));
-        $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
+        $newFullOrder = array_values(array_filter($fullOrder, function ($id) use ($toDelete) { return $id !== $toDelete; }));
+        $updates = ['custom_modules' => json_encode($adminModules), 'module_order' => json_encode($newFullOrder)];
+        $saveResult = save_config($repoRoot, $updates);
         if ($saveResult === true) {
             header('Location: ' . $baseUrl . '&tab=modules');
             exit;
@@ -162,13 +136,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     while (in_array('custom-' . $n, $ids, true)) {
                         $n++;
                     }
-                    $adminModules[] = ['id' => 'custom-' . $n, 'name' => $name, 'icon' => $icon, 'format' => $format, 'fields' => $fields];
+                    $newId = 'custom-' . $n;
+                    $adminModules[] = ['id' => $newId, 'name' => $name, 'icon' => $icon, 'format' => $format, 'fields' => $fields];
+                    $fullOrder[] = $newId;
                 }
             }
             if ($error === '') {
-                $saveResult = save_config($repoRoot, ['custom_modules' => json_encode($adminModules)]);
+                $updates = ['custom_modules' => json_encode($adminModules)];
+                if (isset($newId)) {
+                    $updates['module_order'] = json_encode($fullOrder);
+                }
+                $saveResult = save_config($repoRoot, $updates);
                 if ($saveResult === true) {
                     $config['custom_modules'] = json_encode($adminModules);
+                    if (isset($newId)) {
+                        $config['module_order'] = json_encode($fullOrder);
+                    }
                     header('Location: ' . $baseUrl . '&tab=modules');
                     exit;
                 }
@@ -181,47 +164,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }, $fields)];
         }
     }
-    // Custom module visibility and/or order (from Modules tab form)
-    elseif (isset($_POST['save_custom_modules_visibility']) || (isset($_POST['module_order']) && is_array($_POST['module_order']))) {
-        $updates = [];
-        if (isset($_POST['visible_custom_modules']) && is_array($_POST['visible_custom_modules'])) {
-            $allIds = array_filter(array_map(function ($m) {
-                return isset($m['id']) ? $m['id'] : null;
-            }, $adminModules));
-            $visible = array_values(array_filter(array_map('trim', $_POST['visible_custom_modules'])));
-            $hidden = array_values(array_diff($allIds, $visible));
-            $updates['hidden_custom_modules'] = json_encode($hidden);
+    // Custom module visibility only (Section 1: Custom modules)
+    elseif (isset($_POST['save_custom_modules_visibility']) && isset($_POST['visible_custom_modules']) && is_array($_POST['visible_custom_modules'])) {
+        $allIds = array_filter(array_map(function ($m) { return isset($m['id']) ? $m['id'] : null; }, $adminModules));
+        $visible = array_values(array_filter(array_map('trim', $_POST['visible_custom_modules'])));
+        $hidden = array_values(array_diff($allIds, $visible));
+        $saveResult = save_config($repoRoot, ['hidden_custom_modules' => json_encode($hidden)]);
+        if ($saveResult === true) {
+            $config['hidden_custom_modules'] = json_encode($hidden);
+            header('Location: ' . $baseUrl . '&tab=modules');
+            exit;
         }
-        if (isset($_POST['module_order']) && is_array($_POST['module_order'])) {
-            $order = array_values(array_filter(array_map('trim', $_POST['module_order'])));
+        $error = is_string($saveResult) ? $saveResult : 'Could not save.';
+    }
+    // Full module order (Section 3: Order)
+    elseif (isset($_POST['save_module_order']) && isset($_POST['full_order']) && is_array($_POST['full_order'])) {
+        $order = array_values(array_filter(array_map('trim', $_POST['full_order'])));
+        $validIds = array_merge($defaultPresetIds, $customIds);
+        $order = array_values(array_intersect($order, $validIds));
+        $order = array_merge($order, array_diff($validIds, $order));
+        if (count($order) === count($validIds)) {
+            $newPresetOrder = array_values(array_intersect($order, $defaultPresetIds));
             $byId = [];
             foreach ($adminModules as $m) {
                 if (isset($m['id'])) {
                     $byId[$m['id']] = $m;
                 }
             }
-            $reordered = [];
+            $reorderedCustom = [];
             foreach ($order as $id) {
                 if (isset($byId[$id])) {
-                    $reordered[] = $byId[$id];
+                    $reorderedCustom[] = $byId[$id];
                 }
             }
-            if (count($reordered) === count($adminModules)) {
-                $adminModules = $reordered;
-                $updates['custom_modules'] = json_encode($adminModules);
-            }
-        }
-        if ($updates !== []) {
+            $updates = [
+                'module_order' => json_encode($order),
+                'preset_order' => json_encode($newPresetOrder),
+                'custom_modules' => json_encode($reorderedCustom),
+            ];
             $saveResult = save_config($repoRoot, $updates);
             if ($saveResult === true) {
                 $config = array_merge($config, $updates);
+                $presetOrder = $newPresetOrder;
+                $adminModules = $reorderedCustom;
+                $fullOrder = $order;
                 header('Location: ' . $baseUrl . '&tab=modules');
                 exit;
             }
             $error = is_string($saveResult) ? $saveResult : 'Could not save.';
         }
     }
-    $fromPresetsForm = isset($_POST['visible_presets']) && is_array($_POST['visible_presets']) && !isset($_POST['update_repo']);
+    $fromPresetsForm = isset($_POST['save_default_visibility']) && isset($_POST['visible_presets']) && is_array($_POST['visible_presets']);
     $newPass = trim($_POST['update_auth_password'] ?? '');
     $hiddenPresets = $config['hidden_presets'] ?? '[]';
     if ($fromPresetsForm || (isset($_POST['tab']) && $_POST['tab'] === 'modules') || (isset($_GET['tab']) && $_GET['tab'] === 'modules')) {
@@ -232,16 +225,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if ($fromPresetsForm) {
-        $presetOrder = isset($_POST['preset_order']) && is_array($_POST['preset_order']) ? $_POST['preset_order'] : [];
-        $presetOrder = array_values(array_filter(array_map('trim', $presetOrder)));
-        $presetOrder = array_values(array_intersect($presetOrder, $defaultPresetIds));
-        if (count($presetOrder) !== count($defaultPresetIds)) {
-            $presetOrder = $defaultPresetIds;
+        $saveResult = save_config($repoRoot, ['hidden_presets' => $hiddenPresets]);
+        if ($saveResult === true) {
+            $config['hidden_presets'] = $hiddenPresets;
+            header('Location: ' . $baseUrl . '&tab=modules');
+            exit;
         }
-        $updates = array_merge($config, [
-            'hidden_presets' => $hiddenPresets,
-            'preset_order' => json_encode($presetOrder),
-        ]);
+        $error = is_string($saveResult) ? $saveResult : 'Could not save.';
     } else {
         $updates = [
             'update_repo' => trim($_POST['update_repo'] ?? ''),
@@ -368,34 +358,39 @@ if (!in_array($tab, $validTabs, true)) {
     </form>
 
     <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
+      <?php
+      $hiddenCustomList = json_decode($config['hidden_custom_modules'] ?? '[]', true);
+      if (!is_array($hiddenCustomList)) {
+          $hiddenCustomList = [];
+      }
+      $hiddenList = json_decode($config['hidden_presets'] ?? '[]', true);
+      if (!is_array($hiddenList)) {
+          $hiddenList = [];
+      }
+      ?>
+
+      <!-- 1. Custom modules: add, edit, delete + visibility -->
       <div class="panel">
-        <h2 class="admin-module-heading">Custom modules <button type="button" class="admin-btn-add-module" id="admin-btn-add-module" aria-label="Add custom module">+ Add</button></h2>
-        <p class="sub">These modules appear in the main app for all users. Drag to reorder. Uncheck to hide from the tab bar. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
-        <?php
-        $hiddenCustomList = json_decode($config['hidden_custom_modules'] ?? '[]', true);
-        if (!is_array($hiddenCustomList)) {
-            $hiddenCustomList = [];
-        }
-        if (count($adminModules) > 0) { ?>
+        <h2 class="admin-module-heading">1. Custom modules <button type="button" class="admin-btn-add-module" id="admin-btn-add-module" aria-label="Add custom module">+ Add</button></h2>
+        <p class="sub">Add, edit, or remove custom modules. Uncheck <strong>Show</strong> to hide from the tab bar. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
+        <?php if (count($adminModules) > 0) { ?>
         <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-custom-modules-form">
           <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
           <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
           <input type="hidden" name="save_custom_modules_visibility" value="1">
-          <ul class="admin-module-list admin-draggable-list" id="admin-module-list" aria-label="Custom modules order">
-          <?php foreach ($adminModules as $idx => $m) {
+          <ul class="admin-module-list" id="admin-custom-modules-list" aria-label="Custom modules">
+          <?php foreach ($adminModules as $m) {
               $mid = isset($m['id']) ? $m['id'] : '';
               $mname = isset($m['name']) ? $m['name'] : '';
               $mformat = isset($m['format']) ? $m['format'] : '';
               $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
               $visible = !in_array($mid, $hiddenCustomList, true);
           ?>
-          <li class="admin-module-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($mid); ?>">
-            <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
+          <li class="admin-module-item">
             <label class="admin-module-visible">
               <input type="checkbox" name="visible_custom_modules[]" value="<?php echo htmlspecialchars($mid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
               <span class="admin-module-visible-label">Show</span>
             </label>
-            <input type="hidden" name="module_order[]" value="<?php echo htmlspecialchars($mid); ?>">
             <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
             <span class="admin-module-actions">
               <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
@@ -408,8 +403,8 @@ if (!in_array($tab, $validTabs, true)) {
             </span>
           </li>
           <?php } ?>
-        </ul>
-        <button type="submit" class="btn admin-save-modules">Save order &amp; visibility</button>
+          </ul>
+          <button type="submit" class="btn admin-save-modules">Save visibility</button>
         </form>
         <?php } else { ?>
         <p class="sub">No custom modules yet. Click <strong>+ Add</strong> to create one.</p>
@@ -470,89 +465,114 @@ if (!in_array($tab, $validTabs, true)) {
           cancel.addEventListener('click', closeModal);
           modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
         })();
-        (function dragDrop() {
-          var lists = document.querySelectorAll('.admin-draggable-list');
-          lists.forEach(function(list) {
-            var items = list.querySelectorAll('.admin-draggable-item');
-            var dragged = null;
-            items.forEach(function(item) {
-              var handle = item.querySelector('.admin-drag-handle');
-              if (!handle) return;
-              item.setAttribute('draggable', 'true');
-              function onDragStart(e) {
-                if (!handle.contains(e.target)) return;
-                dragged = item;
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', item.getAttribute('data-module-id') || item.getAttribute('data-preset-id') || '');
-                item.classList.add('admin-dragging');
-              }
-              function onDragEnd() {
-                item.classList.remove('admin-dragging');
-                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-                dragged = null;
-              }
-              item.addEventListener('dragstart', onDragStart);
-              item.addEventListener('dragend', onDragEnd);
-            });
-            list.addEventListener('dragover', function(e) {
-              if (!dragged) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = 'move';
-              var target = e.target.closest('.admin-draggable-item');
-              if (target && target !== dragged) {
-                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-                target.classList.add('admin-drag-over');
-              }
-            });
-            list.addEventListener('dragleave', function(e) {
-              if (!e.relatedTarget || !list.contains(e.relatedTarget)) {
-                list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-              }
-            });
-            list.addEventListener('drop', function(e) {
-              e.preventDefault();
-              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-              var target = e.target.closest('.admin-draggable-item');
-              if (dragged && target && target !== dragged) {
-                var all = list.querySelectorAll('.admin-draggable-item');
-                var idx = Array.prototype.indexOf.call(all, target);
-                if (idx >= 0) {
-                  list.insertBefore(dragged, target);
-                }
-              }
-              dragged = null;
-            });
-          });
-        })();
       </script>
+
+      <!-- 2. Default modules: hide/show toggles only -->
       <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
         <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
-        <input type="hidden" name="tab" value="modules">
+        <input type="hidden" name="save_default_visibility" value="1">
         <div class="panel">
-          <h2>Default preset tabs</h2>
-          <p class="sub">Drag to reorder. Uncheck to hide from the tab bar for <strong>all users</strong>. At least one must remain visible.</p>
-          <ul class="admin-preset-order-list admin-draggable-list" id="admin-preset-order-list" aria-label="Default presets order">
-          <?php
-          $hiddenList = json_decode($config['hidden_presets'] ?? '[]', true);
-          if (!is_array($hiddenList)) $hiddenList = [];
-          foreach ($presetOrder as $pidx => $pid) {
+          <h2>2. Default modules</h2>
+          <p class="sub">Show or hide built-in preset tabs for <strong>all users</strong>. At least one must remain visible.</p>
+          <ul class="admin-preset-visibility-list" aria-label="Default presets visibility">
+          <?php foreach ($defaultPresetIds as $pid) {
               $visible = !in_array($pid, $hiddenList, true);
               $label = $defaultPresetLabels[$pid] ?? $pid;
           ?>
-            <li class="admin-preset-order-item admin-draggable-item" data-preset-id="<?php echo htmlspecialchars($pid); ?>">
-              <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
+            <li class="admin-preset-visibility-item">
               <label class="admin-preset-checkbox">
                 <input type="checkbox" name="visible_presets[]" value="<?php echo htmlspecialchars($pid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
                 <?php echo htmlspecialchars($label); ?>
               </label>
-              <input type="hidden" name="preset_order[]" value="<?php echo htmlspecialchars($pid); ?>">
             </li>
           <?php } ?>
           </ul>
         </div>
-        <button type="submit" class="btn admin-save-modules">Save</button>
+        <button type="submit" class="btn admin-save-modules">Save visibility</button>
       </form>
+
+      <!-- 3. Order: combined list with drag-and-drop -->
+      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-order-form">
+        <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+        <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
+        <input type="hidden" name="save_module_order" value="1">
+        <div class="panel">
+          <h2>3. Order</h2>
+          <p class="sub">Drag to set the tab order in the main app. Order applies to both default and custom modules.</p>
+          <ul class="admin-module-order-list admin-draggable-list" id="admin-module-order-list" aria-label="Module order">
+          <?php
+          $customById = [];
+          foreach ($adminModules as $m) {
+              if (isset($m['id'])) {
+                  $customById[$m['id']] = $m;
+              }
+          }
+          foreach ($fullOrder as $oid) {
+              $isDefault = in_array($oid, $defaultPresetIds, true);
+              $label = $isDefault ? ($defaultPresetLabels[$oid] ?? $oid) : (isset($customById[$oid]) ? $customById[$oid]['name'] : $oid);
+          ?>
+            <li class="admin-module-order-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($oid); ?>">
+              <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
+              <input type="hidden" name="full_order[]" value="<?php echo htmlspecialchars($oid); ?>">
+              <span class="admin-module-order-label"><?php echo htmlspecialchars($label); ?><?php if (!$isDefault) { ?> <em>(custom)</em><?php } ?></span>
+            </li>
+          <?php } ?>
+          </ul>
+        </div>
+        <button type="submit" class="btn admin-save-modules">Save order</button>
+      </form>
+      <script>
+        (function dragDrop() {
+          var list = document.getElementById('admin-module-order-list');
+          if (!list) return;
+          var items = list.querySelectorAll('.admin-draggable-item');
+          var dragged = null;
+          items.forEach(function(item) {
+            var handle = item.querySelector('.admin-drag-handle');
+            if (!handle) return;
+            item.setAttribute('draggable', 'true');
+            function onDragStart(e) {
+              if (!handle.contains(e.target)) return;
+              dragged = item;
+              e.dataTransfer.effectAllowed = 'move';
+              e.dataTransfer.setData('text/plain', item.getAttribute('data-module-id') || '');
+              item.classList.add('admin-dragging');
+            }
+            function onDragEnd() {
+              item.classList.remove('admin-dragging');
+              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+              dragged = null;
+            }
+            item.addEventListener('dragstart', onDragStart);
+            item.addEventListener('dragend', onDragEnd);
+          });
+          list.addEventListener('dragover', function(e) {
+            if (!dragged) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            var target = e.target.closest('.admin-draggable-item');
+            if (target && target !== dragged) {
+              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+              target.classList.add('admin-drag-over');
+            }
+          });
+          list.addEventListener('dragleave', function(e) {
+            if (!e.relatedTarget || !list.contains(e.relatedTarget)) {
+              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+            }
+          });
+          list.addEventListener('drop', function(e) {
+            e.preventDefault();
+            list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+            var target = e.target.closest('.admin-draggable-item');
+            if (dragged && target && target !== dragged) {
+              list.insertBefore(dragged, target);
+            }
+            dragged = null;
+          });
+        })();
+      </script>
     </section>
   </div>
   <script>

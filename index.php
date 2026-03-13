@@ -8,9 +8,23 @@ $serverCustomModules = json_decode($config['custom_modules'] ?? '[]', true);
 if (!is_array($serverCustomModules)) {
     $serverCustomModules = [];
 }
+$defaultPresetIds = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
 $presetOrder = json_decode($config['preset_order'] ?? '[]', true);
-if (!is_array($presetOrder) || count($presetOrder) === 0) {
-    $presetOrder = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
+if (!is_array($presetOrder) || count($presetOrder) !== count($defaultPresetIds)) {
+    $presetOrder = $defaultPresetIds;
+} else {
+    $presetOrder = array_values(array_intersect($presetOrder, $defaultPresetIds));
+    $presetOrder = array_merge($presetOrder, array_diff($defaultPresetIds, $presetOrder));
+}
+$customIds = array_filter(array_map(function ($m) { return isset($m['id']) ? $m['id'] : null; }, $serverCustomModules));
+$moduleOrder = json_decode($config['module_order'] ?? '[]', true);
+$expectedFullCount = count($defaultPresetIds) + count($customIds);
+if (!is_array($moduleOrder) || count($moduleOrder) !== $expectedFullCount) {
+    $moduleOrder = array_merge($presetOrder, $customIds);
+} else {
+    $validIds = array_merge($defaultPresetIds, $customIds);
+    $moduleOrder = array_values(array_intersect($moduleOrder, $validIds));
+    $moduleOrder = array_merge($moduleOrder, array_diff($validIds, $moduleOrder));
 }
 
 $title = 'QR Code Generator';
@@ -311,6 +325,7 @@ $defaultText = 'https://example.com';
 
   <script>window.SERVER_CUSTOM_MODULES = <?php echo json_encode($serverCustomModules, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
   <script>window.PRESET_ORDER = <?php echo json_encode($presetOrder, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
+  <script>window.MODULE_ORDER = <?php echo json_encode($moduleOrder, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
   <script>
 (function() {
   var form = document.getElementById('qr-form');
@@ -330,6 +345,7 @@ $defaultText = 'https://example.com';
 
   var PRESET_IDS = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
   var PRESET_ORDER = window.PRESET_ORDER && window.PRESET_ORDER.length === PRESET_IDS.length ? window.PRESET_ORDER : PRESET_IDS.slice();
+  var MODULE_ORDER = (window.MODULE_ORDER && window.MODULE_ORDER.length > 0) ? window.MODULE_ORDER : null;
   var PRESET_LABELS = { url: 'URL', wifi: 'Wi‑Fi', vcard: 'vCard', text: 'Text', email: 'Email', sms: 'SMS', bitcoin: 'Bitcoin', facebook: 'Facebook', pdf: 'PDF', mp3: 'MP3', appstore: 'App Store', image: 'Image', custom: 'Custom' };
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
@@ -356,6 +372,34 @@ $defaultText = 'https://example.com';
       if (firstPanel) {
         for (var j = order.length - 1; j >= 0; j--) {
           var panel = document.getElementById('preset-' + order[j]);
+          if (panel) {
+            form.insertBefore(panel, firstPanel);
+            firstPanel = panel;
+          }
+        }
+      }
+    }
+  }
+  function applyModuleOrder(fullOrder) {
+    var tabsContainer = document.querySelector('.preset-tabs');
+    var addBtn = document.getElementById('btn-add-module');
+    if (tabsContainer && addBtn && fullOrder && fullOrder.length > 0) {
+      var ref = addBtn;
+      for (var i = fullOrder.length - 1; i >= 0; i--) {
+        var tab = tabsContainer.querySelector('.preset-tab[data-preset="' + fullOrder[i] + '"]');
+        if (tab) {
+          var moveNode = tab.parentNode && tab.parentNode.classList && tab.parentNode.classList.contains('preset-tab-custom-wrap') ? tab.parentNode : tab;
+          tabsContainer.insertBefore(moveNode, ref);
+          ref = moveNode;
+        }
+      }
+    }
+    var form = document.getElementById('qr-form');
+    if (form && fullOrder && fullOrder.length > 0) {
+      var firstPanel = form.querySelector('.preset-panel');
+      if (firstPanel) {
+        for (var k = fullOrder.length - 1; k >= 0; k--) {
+          var panel = document.getElementById('preset-' + fullOrder[k]);
           if (panel) {
             form.insertBefore(panel, firstPanel);
             firstPanel = panel;
@@ -683,7 +727,11 @@ $defaultText = 'https://example.com';
   form.addEventListener('change', update);
 
   renderCustomModules();
-  applyPresetOrder();
+  if (MODULE_ORDER && MODULE_ORDER.length > 0) {
+    applyModuleOrder(MODULE_ORDER);
+  } else {
+    applyPresetOrder();
+  }
   function initPresetsVisibility() {
     var hidden = getHiddenPresets();
     if (!Array.isArray(hidden)) hidden = [];
@@ -691,9 +739,11 @@ $defaultText = 'https://example.com';
     applyDefaultPresetsVisibility();
     var saved = null;
     try { saved = sessionStorage.getItem(STORAGE_KEY); } catch (e) {}
-    var visibleDefaults = PRESET_ORDER.filter(function(id) { return hidden.indexOf(id) === -1; });
-    var allIds = visibleDefaults.concat(getCustomModuleIds());
-    var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (visibleDefaults[0] || 'text');
+    var order = (MODULE_ORDER && MODULE_ORDER.length > 0) ? MODULE_ORDER : PRESET_ORDER.concat(getCustomModuleIds());
+    var allIds = order.filter(function(id) {
+      return PRESET_IDS.indexOf(id) !== -1 ? hidden.indexOf(id) === -1 : hiddenCustomModulesFromServer.indexOf(id) === -1;
+    });
+    var initial = (saved && allIds.indexOf(saved) !== -1) ? saved : (allIds[0] || 'text');
     setPreset(initial);
   }
   fetch('updates.php?action=hidden-presets', { credentials: 'include' })
