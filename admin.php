@@ -679,6 +679,23 @@ if (!in_array($tab, $validTabs, true)) {
       msgEl.textContent = text || '';
       msgEl.className = 'admin-update-msg' + (className ? ' ' + className : '');
     }
+    function escapeHtml(s) {
+      var div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+    function setVersionDisplay(version, versionUrl) {
+      if (!versionEl) return;
+      if (!version) {
+        versionEl.textContent = 'Current version: —';
+        return;
+      }
+      if (versionUrl) {
+        versionEl.innerHTML = 'Current version: <a href="' + escapeHtml(versionUrl) + '" target="_blank" rel="noopener noreferrer" class="version-link">' + escapeHtml(version) + '</a>';
+      } else {
+        versionEl.textContent = 'Current version: ' + version;
+      }
+    }
 
     function checkUrl() {
       var k = getKey();
@@ -702,7 +719,7 @@ if (!in_array($tab, $validTabs, true)) {
             return;
           }
           if (d && d.currentVersion) {
-            versionEl.textContent = 'Current version: ' + d.currentVersion;
+            setVersionDisplay(d.currentVersion, d.versionUrl || null);
           }
           if (d && d.updateAvailable && d.latestVersion) {
             setMsg('Update available: ' + d.latestVersion, 'has-update');
@@ -746,7 +763,7 @@ if (!in_array($tab, $validTabs, true)) {
           if (d && d.success) {
             setMsg('Upgrade complete. Reload the page.', 'has-update');
             upgradeBtn.style.display = 'none';
-            if (versionEl && d.currentVersion) versionEl.textContent = 'Current version: ' + d.currentVersion;
+            if (versionEl && d.currentVersion) setVersionDisplay(d.currentVersion, d.versionUrl || null);
           } else {
             setMsg((d && d.error ? d.error : 'Upgrade failed.') + (d && d.output ? ' ' + d.output : ''), 'error');
           }
@@ -760,7 +777,7 @@ if (!in_array($tab, $validTabs, true)) {
       fetch(checkUrl(), { credentials: 'include' })
         .then(function(r) { return r.ok ? r.json() : null; })
         .then(function(d) {
-          if (d && d.currentVersion) versionEl.textContent = 'Current version: ' + d.currentVersion;
+          if (d && d.currentVersion) setVersionDisplay(d.currentVersion, d.versionUrl || null);
         })
         .catch(function() {});
     }
