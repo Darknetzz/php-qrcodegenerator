@@ -59,13 +59,30 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 
 ### Docker
 
-Images are published to **Docker Hub** and **GHCR** on each version tag (see [AGENTS.md](AGENTS.md#5-docker-images-automatic-if-ci-is-configured)).
+Pre-built images are published to **Docker Hub** and **GHCR** on each version tag. Replace `OWNER/REPO` below with your GitHub org/repo (e.g. `myorg/qr`) for GHCR, or use your Docker Hub username and image name for Docker Hub.
 
-```bash
-docker run -p 8080:80 -v qr-data:/var/www/html/data ghcr.io/OWNER/REPO:v1.1.0
-```
+1. **Pull the image** (choose one):
+   ```bash
+   docker pull ghcr.io/OWNER/REPO:v1.1.0
+   # or
+   docker pull YOUR_DOCKERHUB_USER/php-qrcodegenerator:v1.1.0
+   ```
 
-Then open `http://localhost:8080/`. Persist config in a volume so `data/config.sqlite` is kept (e.g. `-v qr-data:/var/www/html/data` as above).
+2. **Run the container** with a volume so settings (and admin/upgrade secrets) persist in `data/config.sqlite`:
+   ```bash
+   docker run -d -p 8080:80 -v qr-data:/var/www/html/data --name qr ghcr.io/OWNER/REPO:v1.1.0
+   ```
+
+3. Open **http://localhost:8080/** in a browser. Use the Admin link on the page to set access control (IP allowlist, login, or admin/upgrade secrets).
+
+4. **Optional:** To build the image yourself from the repo:
+   ```bash
+   git clone https://github.com/OWNER/REPO.git qr && cd qr
+   docker build -t php-qrcodegenerator:local .
+   docker run -d -p 8080:80 -v qr-data:/var/www/html/data --name qr php-qrcodegenerator:local
+   ```
+
+Use a specific version tag (e.g. `v1.1.0`) in production instead of `latest`. See [AGENTS.md](AGENTS.md#5-docker-images-automatic-if-ci-is-configured) for how images are published on release.
 
 ## Files
 
