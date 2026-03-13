@@ -9,7 +9,7 @@
  * POST ?action=login (username, password) → session login; returns { success } or 401
  * POST ?action=logout → clear session
  * POST ?action=save-initial-config → save first-time setup (only when not yet configured)
- * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType }
+ * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType, updateChannel }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
 require_once __DIR__ . '/load_config.php';
@@ -351,10 +351,12 @@ function get_default_branch(string $repoRoot): string {
  * Returns null if fetch or describe fails.
  */
 function get_dev_latest(string $repoRoot, string $branch): ?array {
+    $safeBranch = preg_replace('/[^a-zA-Z0-9._\-]/', '', $branch) ?: 'main';
+    $ref = 'origin/' . $safeBranch;
     $escRoot = escapeshellarg($repoRoot);
-    $escBranch = escapeshellarg($branch);
+    $escRef = escapeshellarg($ref);
     @shell_exec("cd {$escRoot} && git fetch origin 2>/dev/null");
-    $cmd = "cd {$escRoot} && git describe --tags --always origin/{$escBranch} 2>/dev/null";
+    $cmd = "cd {$escRoot} && git describe --tags --always {$escRef} 2>/dev/null";
     $out = @shell_exec($cmd);
     if ($out === null) {
         return null;
@@ -363,7 +365,7 @@ function get_dev_latest(string $repoRoot, string $branch): ?array {
     if ($describe === '') {
         return null;
     }
-    $cmd2 = "cd {$escRoot} && git rev-parse --short origin/{$escBranch} 2>/dev/null";
+    $cmd2 = "cd {$escRoot} && git rev-parse --short {$escRef} 2>/dev/null";
     $out2 = @shell_exec($cmd2);
     $short = ($out2 !== null && trim($out2) !== '') ? trim($out2) : null;
     return [$describe, $short];
@@ -391,6 +393,7 @@ if ($action === 'check') {
     if ($channel !== 'stable' && $channel !== 'dev') {
         $channel = 'stable';
     }
+    $github = resolve_repo($repoRoot, $isGit, $config);
     $latestVersion = null;
     $releaseUrl = null;
     $updateAvailable = false;
@@ -412,7 +415,7 @@ if ($action === 'check') {
                 $updateAvailable = $current !== $latestVersion;
             }
         }
-    } elseif ($github = resolve_repo($repoRoot, $isGit, $config)) {
+    } elseif ($github !== null) {
         [$owner, $repo] = $github;
         $release = get_latest_release($owner, $repo);
         if ($release !== null) {
@@ -457,14 +460,49 @@ if ($action === 'upgrade') {
         ], 200);
     }
 
-    $branch = trim((string) ($_REQUEST['branch'] ?? ''));
-    if ($branch === '') {
-        $ref = @file_get_contents($repoRoot . '/.git/HEAD');
-        $branch = 'main';
-        if ($ref !== false && preg_match('#ref: refs/heads/(.+)#', trim($ref), $m)) {
-            $branch = trim($m[1]);
-        }
+    $channel = trim($config['update_channel'] ?? 'stable');
+    if ($channel !== 'stable' && $channel !== 'dev') {
+        $channel = 'stable';
     }
+
+    if ($channel === 'stable') {
+        $github = resolve_repo($repoRoot, true, $config);
+        if ($github === null) {
+            json_exit(['success' => false, 'error' => 'Could not resolve repo for latest release', 'output' => ''], 500);
+        }
+        [$owner, $repo] = $github;
+        $release = get_latest_release($owner, $repo);
+        if ($release === null) {
+            json_exit(['success' => false, 'error' => 'Could not fetch latest release', 'output' => ''], 500);
+        }
+        [$tagName] = $release;
+        $tagName = preg_replace('/[^a-zA-Z0-9._\-]/', '', $tagName) ?: 'v0.0.0';
+        $cmd = sprintf(
+            'cd %s && git fetch origin --tags 2>&1; git checkout %s 2>&1; echo __EXIT__$?',
+            escapeshellarg($repoRoot),
+            escapeshellarg($tagName),
+            escapeshellarg($tagName)
+        );
+        $output = @shell_exec($cmd);
+        if ($output === null) {
+            json_exit(['success' => false, 'error' => 'git checkout failed', 'output' => ''], 500);
+        }
+        $exitCode = 1;
+        if (preg_match('/__EXIT__(\d+)\s*$/', $output, $m)) {
+            $exitCode = (int) $m[1];
+            $output = trim(preg_replace('/__EXIT__\d+\s*$/', '', $output));
+        } else {
+            $output = trim($output);
+        }
+        $success = $exitCode === 0;
+        json_exit([
+            'success' => $success,
+            'output' => $output,
+            'error' => $success ? null : 'Checkout failed; check output.',
+        ], $success ? 200 : 500);
+    }
+
+    $branch = get_default_branch($repoRoot);
     $branch = preg_replace('/[^a-zA-Z0-9._\-]/', '', $branch) ?: 'main';
 
     $cmd = sprintf(
