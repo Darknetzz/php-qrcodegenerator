@@ -29,5 +29,6 @@ Notes for maintainers and AI agents working on this repo.
 
 5. **Docker images** (automatic if CI is configured)  
    Pushing a version tag (e.g. `git push origin v1.0.1`) triggers the [Docker release workflow](.github/workflows/docker-release.yml): the image is built and pushed to **Docker Hub** (`darknetz/php-qrcodegenerator`) and **GHCR** (`ghcr.io/darknetzz/php-qrcodegenerator`).  
+   **Existing tag, no image yet?** In GitHub: **Actions → Docker release → Run workflow**, enter the version (e.g. `1.1.0`) and run; the workflow checks out that tag and builds.  
    Add repo secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` (Docker Hub access token). GHCR uses `GITHUB_TOKEN` automatically.  
-   To build and push manually: set `DOCKERHUB_IMAGE=darknetz/php-qrcodegenerator` and `GHCR_IMAGE=ghcr.io/darknetzz/php-qrcodegenerator`, then run `./scripts/docker-release.sh [VERSION]` (script is in `scripts/`, make executable with `chmod +x` if needed).
+   To build and push from your machine: set `DOCKERHUB_IMAGE=darknetz/php-qrcodegenerator` and `GHCR_IMAGE=ghcr.io/darknetzz/php-qrcodegenerator`, then run `./scripts/docker-release.sh [VERSION]` (script is in `scripts/`, make executable with `chmod +x` if needed).
