@@ -315,6 +315,7 @@ $defaultText = 'https://example.com';
   var STORAGE_KEY = 'qr-preset';
   var CUSTOM_MODULES_KEY = 'qr-custom-modules';
   var hiddenPresetsFromServer = [];
+  var hiddenCustomModulesFromServer = [];
   var serverModules = window.SERVER_CUSTOM_MODULES || [];
   var serverModuleIds = serverModules.map(function(m) { return m.id; });
   function getHiddenPresets() {
@@ -356,7 +357,10 @@ $defaultText = 'https://example.com';
     var local = getLocalCustomModules().filter(function(m) {
       return serverModuleIds.indexOf(m.id) === -1;
     });
-    return serverModules.concat(local);
+    var visibleServer = serverModules.filter(function(m) {
+      return hiddenCustomModulesFromServer.indexOf(m.id) === -1;
+    });
+    return visibleServer.concat(local);
   }
   function setCustomModules(arr) {
     try {
@@ -677,10 +681,12 @@ $defaultText = 'https://example.com';
     .then(function(r) { return r.json(); })
     .then(function(d) {
       hiddenPresetsFromServer = (d && d.hiddenPresets) && Array.isArray(d.hiddenPresets) ? d.hiddenPresets : [];
+      hiddenCustomModulesFromServer = (d && d.hiddenCustomModules) && Array.isArray(d.hiddenCustomModules) ? d.hiddenCustomModules : [];
       initPresetsVisibility();
     })
     .catch(function() {
       hiddenPresetsFromServer = [];
+      hiddenCustomModulesFromServer = [];
       initPresetsVisibility();
     });
 

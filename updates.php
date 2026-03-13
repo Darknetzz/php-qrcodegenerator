@@ -74,7 +74,12 @@ if ($action === 'hidden-presets') {
     if (!is_array($list)) {
         $list = [];
     }
-    json_exit(['hiddenPresets' => $list]);
+    $rawCustom = $config['hidden_custom_modules'] ?? '[]';
+    $listCustom = json_decode($rawCustom, true);
+    if (!is_array($listCustom)) {
+        $listCustom = [];
+    }
+    json_exit(['hiddenPresets' => $list, 'hiddenCustomModules' => $listCustom]);
 }
 
 if ($action === 'login') {
