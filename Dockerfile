@@ -4,11 +4,12 @@ FROM php:8.2-apache
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpng-dev \
     libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libzip-dev \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd pdo_sqlite zip \
-    && apt-get purge -y libpng-dev libjpeg62-turbo-dev libzip-dev \
+    && apt-get purge -y libpng-dev libjpeg62-turbo-dev libfreetype6-dev libzip-dev \
     && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
 # Apache: document root and mod_rewrite
