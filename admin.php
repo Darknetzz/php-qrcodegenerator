@@ -1,7 +1,8 @@
 <?php
 /**
- * Admin panel: edit app config (SQLite). Access: ?key=<admin_secret or update_secret>.
- * If both secrets are empty, access allowed for first-time setup.
+ * Admin panel: edit app config (SQLite).
+ * Access: ?key=<admin_secret or update_secret>. After first valid key, session is used (no key in URL needed).
+ * If both secrets are empty, access allowed for first-time setup only.
  */
 $repoRoot = realpath(__DIR__);
 if ($repoRoot === false) {
@@ -12,16 +13,43 @@ require_once $repoRoot . '/load_config.php';
 security_headers();
 $config = load_config($repoRoot);
 
+// Start session before any logic so CSRF token is available on POST (csrf_verify reads from session)
+csrf_token('admin_csrf');
+
+if (isset($_GET['logout'])) {
+    unset($_SESSION['admin_key']);
+    header('Location: admin.php');
+    exit;
+}
+
 $adminSecret = trim($config['admin_secret'] ?? '');
 $updateSecret = trim($config['update_secret'] ?? '');
 $key = trim($_REQUEST['key'] ?? '');
 $allowed = false;
+$keyFromSession = isset($_SESSION['admin_key']) ? (string) $_SESSION['admin_key'] : '';
+
+// Valid key in URL: allow and store in session so future requests don't need key in URL
 if ($adminSecret !== '' && $key !== '' && hash_equals($adminSecret, $key)) {
     $allowed = true;
+    $_SESSION['admin_key'] = $key;
 } elseif ($updateSecret !== '' && $key !== '' && hash_equals($updateSecret, $key)) {
     $allowed = true;
+    $_SESSION['admin_key'] = $key;
 } elseif ($adminSecret === '' && $updateSecret === '') {
     $allowed = true;
+    if ($key !== '') {
+        $_SESSION['admin_key'] = $key;
+    }
+}
+// No key in URL but we have a valid key in session (from a previous visit)
+if (!$allowed && $key === '' && $keyFromSession !== '') {
+    if (($adminSecret !== '' && hash_equals($adminSecret, $keyFromSession))
+        || ($updateSecret !== '' && hash_equals($updateSecret, $keyFromSession))) {
+        $allowed = true;
+        $key = $keyFromSession;
+    } else {
+        unset($_SESSION['admin_key']);
+    }
 }
 
 if (!$allowed) {
@@ -262,9 +290,6 @@ $validTabs = ['updates', 'auth', 'modules'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'updates';
 }
-
-// Start session before any output so the CSRF token cookie is sent and survives the next POST
-csrf_token('admin_csrf');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -278,7 +303,7 @@ csrf_token('admin_csrf');
   <div class="wrap">
     <h1>Admin — Config</h1>
     <p class="sub">Settings are stored in <code>data/config.sqlite</code>. On first run, values are seeded from <code>config.php</code> if present.</p>
-    <p class="sub"><a href="index.php">← Back to QR generator</a></p>
+    <p class="sub"><a href="index.php">← Back to QR generator</a> · <a href="<?php echo htmlspecialchars($baseUrl); ?>&amp;logout=1">Log out</a></p>
 
     <nav class="admin-pills" aria-label="Admin sections">
       <a href="<?php echo $baseUrl; ?>&amp;tab=updates" class="admin-pill<?php echo $tab === 'updates' ? ' is-active' : ''; ?>">Updates</a>
