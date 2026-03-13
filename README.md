@@ -30,16 +30,18 @@ A self-contained QR code generator that runs on any Apache or Nginx server with 
 
 ## Installation
 
+### Manual install
+
 1. Copy the project into your web root (e.g. `htdocs/qr` or `/var/www/html/qr`).
 2. If you cloned from git (and have no `vendor/`), run `composer install` (installs [chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)).
 3. Ensure PHP has the GD extension enabled (default on most LAMP/LEMP stacks).
 4. Open `https://your-server/qr/` (or `index.php`) in a browser.
 
-### Apache
+#### Apache
 
 Document root should point to the folder containing `index.php`. No extra config required. Optional: if you want to allow long URLs for the generator, you can set a larger `LimitRequestLine` in server config (not required for normal use).
 
-### Nginx
+#### Nginx
 
 Example location:
 
@@ -57,7 +59,7 @@ location /qr {
 
 Or serve the project as the root of a vhost; then `index index.php` and `try_files $uri $uri/ /index.php?$args;` as usual for PHP.
 
-### Docker
+### Docker (recommended)
 
 Pre-built images are published to **Docker Hub** (`docker.io/darknetz/php-qrcodegenerator`) and **GitHub Container Registry** (`ghcr.io/darknetz/php-qrcodegenerator`) on each version tag.
 
