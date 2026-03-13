@@ -138,6 +138,7 @@ function get_default_config(): array {
         'hidden_presets' => '[]',
         'hidden_custom_modules' => '[]',
         'preset_order' => '[]',
+        'module_order' => '[]',
         'custom_modules' => '[]',
     ];
 }

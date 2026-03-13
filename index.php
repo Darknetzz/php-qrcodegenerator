@@ -900,6 +900,62 @@ $defaultText = 'https://example.com';
     toggle();
   })();
 
+  (function setupLoginModal() {
+    var loginModal = document.getElementById('login-modal');
+    var backdrop = document.getElementById('login-modal-backdrop');
+    var loginForm = document.getElementById('login-form');
+    var cancelBtn = loginModal && loginModal.querySelector('.login-modal-cancel');
+    if (!loginModal) return;
+
+    function openLoginModal() {
+      loginModal.classList.add('login-modal-visible');
+      loginModal.setAttribute('aria-hidden', 'false');
+    }
+    function closeLoginModal() {
+      loginModal.classList.remove('login-modal-visible');
+      loginModal.setAttribute('aria-hidden', 'true');
+    }
+
+    if (backdrop) backdrop.addEventListener('click', closeLoginModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeLoginModal);
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && loginModal.classList.contains('login-modal-visible')) {
+        closeLoginModal();
+      }
+    });
+
+    if (gateMsgEl) {
+      gateMsgEl.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'btn-open-login-modal') {
+          openLoginModal();
+        }
+      });
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', function(ev) {
+        ev.preventDefault();
+        var errEl = document.getElementById('login-form-error');
+        if (errEl) errEl.textContent = '';
+        var fd = new FormData(loginForm);
+        fd.append('action', 'login');
+        fetch('updates.php', { method: 'POST', body: fd, credentials: 'include' })
+          .then(function(res) { return res.json().then(function(d) { return { status: res.status, data: d }; }); })
+          .then(function(r) {
+            if (r.status === 200 && r.data && r.data.success) {
+              closeLoginModal();
+              setGatedVisible(true);
+              setGateMessage('');
+              applyConfigStatus();
+            } else {
+              if (errEl) errEl.textContent = (r.data && r.data.error) || 'Login failed.';
+            }
+          })
+          .catch(function() { if (errEl) errEl.textContent = 'Login failed.'; });
+      });
+    }
+  })();
+
   if (onboardingForm) {
     onboardingForm.addEventListener('submit', function(e) {
       e.preventDefault();
