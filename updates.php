@@ -43,6 +43,17 @@ function is_access_configured(array $config): bool {
     return $allowlist !== '' || $useBasic;
 }
 
+/** True if request has valid admin or update secret in key= (allows check/upgrade from Admin panel). */
+function has_admin_key(array $config): bool {
+    $key = trim($_REQUEST['key'] ?? '');
+    if ($key === '') {
+        return false;
+    }
+    $admin = trim($config['admin_secret'] ?? '');
+    $update = trim($config['update_secret'] ?? '');
+    return ($admin !== '' && hash_equals($admin, $key)) || ($update !== '' && hash_equals($update, $key));
+}
+
 /** Enforce IP allowlist and/or login (session). Exits with 401/403 if denied. */
 function require_updates_access(array $config): void {
     $remote = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -172,7 +183,9 @@ if ($action === 'save-initial-config') {
 }
 
 if (in_array($action, ['check', 'upgrade'], true)) {
-    require_updates_access($config);
+    if (!has_admin_key($config)) {
+        require_updates_access($config);
+    }
 }
 
 /** Parse origin URL from .git/config → [owner, repo] for GitHub, or null */
@@ -302,6 +315,9 @@ function json_exit(array $data, int $code = 200): void {
 }
 
 function upgrade_allowed(array $config): bool {
+    if (has_admin_key($config)) {
+        return true;
+    }
     $secret = trim($config['update_secret'] ?? '');
     if ($secret === '') {
         $envSecret = getenv('UPDATE_SECRET');
@@ -310,7 +326,8 @@ function upgrade_allowed(array $config): bool {
         }
         $secret = $envSecret;
     }
-    $given = $_REQUEST['secret'] ?? $_SERVER['HTTP_X_UPDATE_SECRET'] ?? '';
+    $given = $_REQUEST['secret'] ?? $_REQUEST['key'] ?? $_SERVER['HTTP_X_UPDATE_SECRET'] ?? '';
+    $given = trim(is_string($given) ? $given : '');
     return $given !== '' && hash_equals($secret, $given);
 }
 

@@ -297,11 +297,20 @@ if (!in_array($tab, $validTabs, true)) {
     <?php if ($error !== '') { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
 
     <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=' . $tab); ?>">
-      <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+      <input type="hidden" name="key" id="admin-key" value="<?php echo htmlspecialchars($key); ?>">
       <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
       <input type="hidden" name="tab" value="<?php echo htmlspecialchars($tab); ?>">
 
       <section class="admin-section" id="admin-updates" aria-hidden="<?php echo $tab !== 'updates' ? 'true' : 'false'; ?>">
+        <div class="panel" id="admin-check-updates-panel">
+          <h2>Check for updates</h2>
+          <p class="admin-update-version" id="admin-current-version">Current version: —</p>
+          <p class="admin-update-actions">
+            <button type="button" class="btn btn-secondary" id="admin-btn-check-updates" aria-label="Check for updates">Check for updates</button>
+            <span class="admin-update-msg" id="admin-update-msg" aria-live="polite"></span>
+            <button type="button" class="btn btn-primary" id="admin-btn-upgrade" style="display:none;">Upgrade</button>
+          </p>
+        </div>
         <div class="panel">
           <h2>Updates</h2>
           <label for="update_repo">GitHub repo (owner/repo) — for zip installs</label>
@@ -471,8 +480,7 @@ if (!in_array($tab, $validTabs, true)) {
               if (!handle) return;
               item.setAttribute('draggable', 'true');
               function onDragStart(e) {
-                if (!handle.contains(e.target) && !item.contains(e.target)) return;
-                if (e.target.closest('a, button, form, input')) return;
+                if (!handle.contains(e.target)) return;
                 dragged = item;
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', item.getAttribute('data-module-id') || item.getAttribute('data-preset-id') || '');
@@ -547,5 +555,107 @@ if (!in_array($tab, $validTabs, true)) {
       </form>
     </section>
   </div>
+  <script>
+  (function adminUpdatesUi() {
+    var keyEl = document.getElementById('admin-key');
+    var versionEl = document.getElementById('admin-current-version');
+    var msgEl = document.getElementById('admin-update-msg');
+    var checkBtn = document.getElementById('admin-btn-check-updates');
+    var upgradeBtn = document.getElementById('admin-btn-upgrade');
+    if (!keyEl || !checkBtn) return;
+
+    function getKey() { return keyEl ? keyEl.value : ''; }
+    function setMsg(text, className) {
+      if (!msgEl) return;
+      msgEl.textContent = text || '';
+      msgEl.className = 'admin-update-msg' + (className ? ' ' + className : '');
+    }
+
+    function checkUrl() {
+      var k = getKey();
+      return 'updates.php?action=check' + (k ? '&key=' + encodeURIComponent(k) : '');
+    }
+
+    checkBtn.addEventListener('click', function() {
+      checkBtn.disabled = true;
+      setMsg('Checking…', 'loading');
+      upgradeBtn.style.display = 'none';
+      fetch(checkUrl(), { credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+        .then(function(r) {
+          if (r.status === 401 || r.status === 403) {
+            setMsg(r.data && r.data.error ? r.data.error : 'Access denied.', 'error');
+            return;
+          }
+          var d = r.data;
+          if (d && d.error) {
+            setMsg(d.error, 'error');
+            return;
+          }
+          if (d && d.currentVersion) {
+            versionEl.textContent = 'Current version: ' + d.currentVersion;
+          }
+          if (d && d.updateAvailable && d.latestVersion) {
+            setMsg('Update available: ' + d.latestVersion, 'has-update');
+            upgradeBtn.textContent = d.installType === 'zip' ? 'Download latest' : 'Upgrade (git pull)';
+            upgradeBtn.dataset.installType = d.installType || 'git';
+            upgradeBtn.dataset.releaseUrl = d.releaseUrl || '';
+            upgradeBtn.style.display = 'inline-block';
+          } else {
+            setMsg('You’re up to date.', '');
+          }
+        })
+        .catch(function() { setMsg('Check failed.', 'error'); })
+        .finally(function() { checkBtn.disabled = false; });
+    });
+
+    upgradeBtn.addEventListener('click', function() {
+      if (upgradeBtn.dataset.installType === 'zip' && upgradeBtn.dataset.releaseUrl) {
+        window.open(upgradeBtn.dataset.releaseUrl, '_blank', 'noopener,noreferrer');
+        setMsg('Open the release page, download the zip, and replace the files.', 'has-update');
+        return;
+      }
+      upgradeBtn.disabled = true;
+      setMsg('Upgrading…', 'loading');
+      var form = new FormData();
+      form.append('action', 'upgrade');
+      var k = getKey();
+      if (k) form.append('key', k);
+      fetch('updates.php', { method: 'POST', body: form, credentials: 'include' })
+        .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
+        .then(function(r) {
+          var d = r.data;
+          if (r.status === 401 || r.status === 403) {
+            setMsg(d && d.error ? d.error : 'Unauthorized.', 'error');
+            return;
+          }
+          if (d && d.noGit && d.releaseUrl) {
+            window.open(d.releaseUrl, '_blank', 'noopener,noreferrer');
+            setMsg('Open the release page, download the zip, and replace the files.', 'has-update');
+            return;
+          }
+          if (d && d.success) {
+            setMsg('Upgrade complete. Reload the page.', 'has-update');
+            upgradeBtn.style.display = 'none';
+            if (versionEl && d.currentVersion) versionEl.textContent = 'Current version: ' + d.currentVersion;
+          } else {
+            setMsg((d && d.error ? d.error : 'Upgrade failed.') + (d && d.output ? ' ' + d.output : ''), 'error');
+          }
+        })
+        .catch(function() { setMsg('Upgrade request failed.', 'error'); })
+        .finally(function() { upgradeBtn.disabled = false; });
+    });
+
+    // Load current version on Updates tab when visible
+    if (versionEl && getKey()) {
+      fetch(checkUrl(), { credentials: 'include' })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+          if (d && d.currentVersion) versionEl.textContent = 'Current version: ' + d.currentVersion;
+        })
+        .catch(function() {});
+    }
+  })();
+  </script>
 </body>
 </html>

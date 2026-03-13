@@ -132,6 +132,36 @@ input[type="checkbox"] {
   color: #f87171;
 }
 
+.admin-update-version {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.admin-update-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.admin-update-msg {
+  font-size: 0.9rem;
+}
+
+.admin-update-msg.loading {
+  color: var(--muted);
+}
+
+.admin-update-msg.has-update {
+  color: var(--accent);
+}
+
+.admin-update-msg.error {
+  color: #f87171;
+}
+
 /* Admin subpage pills */
 .admin-pills {
   display: flex;
