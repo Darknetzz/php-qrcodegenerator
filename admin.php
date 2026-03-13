@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin panel: edit app config (SQLite). Access: ?key=<admin_secret or update_secret>.
- * If both secrets are empty, access allowed for first-time setup.
+ * A valid key is always required; no unauthenticated access.
  */
 $repoRoot = realpath(__DIR__);
 if ($repoRoot === false) {
@@ -19,15 +19,18 @@ if ($adminSecret !== '' && $key !== '' && hash_equals($adminSecret, $key)) {
     $allowed = true;
 } elseif ($updateSecret !== '' && $key !== '' && hash_equals($updateSecret, $key)) {
     $allowed = true;
-} elseif ($adminSecret === '' && $updateSecret === '') {
-    $allowed = true;
 }
 
 if (!$allowed) {
     http_response_code(403);
     header('Content-Type: text/html; charset=utf-8');
+    $noSecrets = ($adminSecret === '' && $updateSecret === '');
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin</title></head><body style="font-family:sans-serif;padding:2rem;background:#0f0f12;color:#e4e4e7;">';
-    echo '<h1>Access denied</h1><p>Use <code>?key=</code> with your admin or update secret.</p>';
+    echo '<h1>Access denied</h1>';
+    echo '<p>Use <code>?key=</code> with your admin or update secret.</p>';
+    if ($noSecrets) {
+        echo '<p>No admin or upgrade secret is set. Set <code>admin_secret</code> in <code>config.php</code> (then reload once so it is seeded into the database), or set it directly in <code>data/config.sqlite</code>, then open this page with <code>?key=your_secret</code>.</p>';
+    }
     echo '<p><a href="index.php" style="color:#22c55e;">Back to app</a></p></body></html>';
     exit;
 }
