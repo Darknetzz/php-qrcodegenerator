@@ -89,7 +89,7 @@ $fgNorm = (str_starts_with($fgHex, '#')) ? $fgHex : '#' . ltrim($fgHex, '#');
 $bgNorm = (str_starts_with($bgHex, '#')) ? $bgHex : '#' . ltrim($bgHex, '#');
 
 /** Maximum content length to prevent DoS (QR capacity and CPU). */
-const GENERATE_TEXT_MAX_LENGTH = 4000;
+$generateTextMaxLength = 4000;
 
 if ($text === '') {
     http_response_code(400);
@@ -97,10 +97,10 @@ if ($text === '') {
     echo 'Missing or empty "text" parameter.';
     exit;
 }
-if (strlen($text) > GENERATE_TEXT_MAX_LENGTH) {
+if (strlen($text) > $generateTextMaxLength) {
     http_response_code(400);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'Content too long. Maximum ' . GENERATE_TEXT_MAX_LENGTH . ' characters.';
+    echo 'Content too long. Maximum ' . $generateTextMaxLength . ' characters.';
     exit;
 }
 
