@@ -468,7 +468,7 @@ if (!in_array($tab, $validTabs, true)) {
       </script>
 
       <!-- 2. Default modules: hide/show toggles only -->
-      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
+      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" autocomplete="off">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
         <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
         <input type="hidden" name="save_default_visibility" value="1">
@@ -488,18 +488,18 @@ if (!in_array($tab, $validTabs, true)) {
             </li>
           <?php } ?>
           </ul>
+          <button type="submit" class="btn admin-save-modules">Save visibility</button>
         </div>
-        <button type="submit" class="btn admin-save-modules">Save visibility</button>
       </form>
 
       <!-- 3. Order: combined list with drag-and-drop -->
-      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-order-form">
+      <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-order-form" autocomplete="off">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
         <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
         <input type="hidden" name="save_module_order" value="1">
         <div class="panel">
           <h2>3. Order</h2>
-          <p class="sub">Drag to set the tab order in the main app. Order applies to both default and custom modules.</p>
+          <p class="sub">Drag rows to set the tab order in the main app. Order applies to both default and custom modules.</p>
           <ul class="admin-module-order-list admin-draggable-list" id="admin-module-order-list" aria-label="Module order">
           <?php
           $customById = [];
@@ -512,15 +512,15 @@ if (!in_array($tab, $validTabs, true)) {
               $isDefault = in_array($oid, $defaultPresetIds, true);
               $label = $isDefault ? ($defaultPresetLabels[$oid] ?? $oid) : (isset($customById[$oid]) ? $customById[$oid]['name'] : $oid);
           ?>
-            <li class="admin-module-order-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($oid); ?>">
+            <li class="admin-module-order-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($oid); ?>" draggable="true">
               <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
               <input type="hidden" name="full_order[]" value="<?php echo htmlspecialchars($oid); ?>">
               <span class="admin-module-order-label"><?php echo htmlspecialchars($label); ?><?php if (!$isDefault) { ?> <em>(custom)</em><?php } ?></span>
             </li>
           <?php } ?>
           </ul>
+          <button type="submit" class="btn admin-save-modules">Save order</button>
         </div>
-        <button type="submit" class="btn admin-save-modules">Save order</button>
       </form>
       <script>
         (function dragDrop() {
@@ -528,44 +528,49 @@ if (!in_array($tab, $validTabs, true)) {
           if (!list) return;
           var items = list.querySelectorAll('.admin-draggable-item');
           var dragged = null;
-          items.forEach(function(item) {
-            var handle = item.querySelector('.admin-drag-handle');
-            if (!handle) return;
+          function clearDropHighlight() {
+            var all = list.querySelectorAll('.admin-draggable-item');
+            for (var i = 0; i < all.length; i++) {
+              if (all[i] && all[i].classList) all[i].classList.remove('admin-drag-over');
+            }
+          }
+          for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            if (!item) continue;
             item.setAttribute('draggable', 'true');
-            function onDragStart(e) {
-              if (!handle.contains(e.target)) return;
-              dragged = item;
-              e.dataTransfer.effectAllowed = 'move';
-              e.dataTransfer.setData('text/plain', item.getAttribute('data-module-id') || '');
-              item.classList.add('admin-dragging');
-            }
-            function onDragEnd() {
-              item.classList.remove('admin-dragging');
-              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+            item.addEventListener('dragstart', function(e) {
+              var el = e.currentTarget;
+              dragged = el;
+              if (e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', (el.getAttribute && el.getAttribute('data-module-id')) || '');
+              }
+              if (el.classList) el.classList.add('admin-dragging');
+            });
+            item.addEventListener('dragend', function(e) {
+              var el = e.currentTarget;
+              if (el && el.classList) el.classList.remove('admin-dragging');
+              clearDropHighlight();
               dragged = null;
-            }
-            item.addEventListener('dragstart', onDragStart);
-            item.addEventListener('dragend', onDragEnd);
-          });
+            });
+          }
           list.addEventListener('dragover', function(e) {
-            if (!dragged) return;
             e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            var target = e.target.closest('.admin-draggable-item');
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+            if (!dragged) return;
+            var target = e.target && e.target.closest ? e.target.closest('.admin-draggable-item') : null;
             if (target && target !== dragged) {
-              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
+              clearDropHighlight();
               target.classList.add('admin-drag-over');
             }
           });
           list.addEventListener('dragleave', function(e) {
-            if (!e.relatedTarget || !list.contains(e.relatedTarget)) {
-              list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-            }
+            if (!e.relatedTarget || !list.contains(e.relatedTarget)) clearDropHighlight();
           });
           list.addEventListener('drop', function(e) {
             e.preventDefault();
-            list.querySelectorAll('.admin-draggable-item').forEach(function(el) { el.classList.remove('admin-drag-over'); });
-            var target = e.target.closest('.admin-draggable-item');
+            clearDropHighlight();
+            var target = e.target && e.target.closest ? e.target.closest('.admin-draggable-item') : null;
             if (dragged && target && target !== dragged) {
               list.insertBefore(dragged, target);
             }
