@@ -1,0 +1,15 @@
+.git
+.gitignore
+.github
+*.md
+!README.md
+Dockerfile
+.dockerignore
+data/*.sqlite
+.env
+.env.*
+*.sample
+scripts/post-*.sample
+scripts/post-checkout.sample
+scripts/post-merge.sample
+node_modules
