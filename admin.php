@@ -1,7 +1,6 @@
 <?php
 /**
- * Admin panel: edit app config (SQLite). Access: ?key=<admin_secret or update_secret>.
- * A valid key is always required; no unauthenticated access.
+ * Admin panel: edit app config (SQLite). Access: ?key=<admin_secret or update_secret>, or be logged in (username/password session from updates.php).
  */
 $repoRoot = realpath(__DIR__);
 if ($repoRoot === false) {
@@ -16,7 +15,7 @@ $config = load_config($repoRoot);
 csrf_token('admin_csrf');
 
 if (isset($_GET['logout'])) {
-    unset($_SESSION['admin_key']);
+    unset($_SESSION['admin_key'], $_SESSION['qr_authenticated']);
     header('Location: admin.php');
     exit;
 }
@@ -45,6 +44,15 @@ if (!$allowed && $key === '' && $keyFromSession !== '') {
         unset($_SESSION['admin_key']);
     }
 }
+// Logged in with username/password (same session as updates.php check/upgrade)
+if (!$allowed && $key === '') {
+    $useLogin = !empty($config['update_use_basic_auth']) && $config['update_use_basic_auth'] !== '0';
+    $user = trim($config['update_auth_user'] ?? '');
+    $pass = trim($config['update_auth_password'] ?? '');
+    if ($useLogin && $user !== '' && $pass !== '' && !empty($_SESSION['qr_authenticated'])) {
+        $allowed = true;
+    }
+}
 
 if (!$allowed) {
     http_response_code(403);
@@ -52,15 +60,15 @@ if (!$allowed) {
     $noSecrets = ($adminSecret === '' && $updateSecret === '');
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin</title></head><body style="font-family:sans-serif;padding:2rem;background:#0f0f12;color:#e4e4e7;">';
     echo '<h1>Access denied</h1>';
-    echo '<p>Use <code>?key=</code> with your admin or update secret.</p>';
+    echo '<p>Use <code>?key=</code> with your admin or update secret, or log in with your username and password on the main app and open this page.</p>';
     if ($noSecrets) {
-        echo '<p>No admin or upgrade secret is set. Set <code>admin_secret</code> in <code>config.php</code> (then reload once so it is seeded into the database), or set it directly in <code>data/config.sqlite</code>, then open this page with <code>?key=your_secret</code>.</p>';
+        echo '<p>No admin or upgrade secret is set. Set <code>admin_secret</code> in <code>config.php</code> (then reload once so it is seeded into the database), or set it directly in <code>data/config.sqlite</code>, then open this page with <code>?key=your_secret</code>. You can also enable login (username/password) in config and log in from the app, then open Admin.</p>';
     }
     echo '<p><a href="index.php" style="color:#22c55e;">Back to app</a></p></body></html>';
     exit;
 }
 
-$baseUrl = 'admin.php?key=' . rawurlencode($key);
+$baseUrl = $key !== '' ? 'admin.php?key=' . rawurlencode($key) : 'admin.php';
 $defaultPresetIds = ['url', 'wifi', 'vcard', 'text', 'email', 'sms', 'bitcoin', 'facebook', 'pdf', 'mp3', 'appstore', 'image', 'custom'];
 $defaultPresetLabels = ['url' => 'URL', 'wifi' => 'Wi‑Fi', 'vcard' => 'vCard', 'text' => 'Text', 'email' => 'Email', 'sms' => 'SMS', 'bitcoin' => 'Bitcoin', 'facebook' => 'Facebook', 'pdf' => 'PDF', 'mp3' => 'MP3', 'appstore' => 'App Store', 'image' => 'Image', 'custom' => 'Custom'];
 
