@@ -57,6 +57,16 @@ location /qr {
 
 Or serve the project as the root of a vhost; then `index index.php` and `try_files $uri $uri/ /index.php?$args;` as usual for PHP.
 
+### Docker
+
+Images are published to **Docker Hub** and **GHCR** on each version tag (see [AGENTS.md](AGENTS.md#5-docker-images-automatic-if-ci-is-configured)).
+
+```bash
+docker run -p 8080:80 -v qr-data:/var/www/html/data ghcr.io/OWNER/REPO:v1.1.0
+```
+
+Then open `http://localhost:8080/`. Persist config in a volume so `data/config.sqlite` is kept (e.g. `-v qr-data:/var/www/html/data` as above).
+
 ## Files
 
 | File / folder   | Purpose |
@@ -72,6 +82,8 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 | `update-config.sample.php` | Deprecated; config is in SQLite and edited in Admin |
 | `VERSION`       | App version (first line only; for zip installs; in git, version is from `git describe`) |
 | `scripts/post-commit.sample`, `post-checkout.sample`, `post-merge.sample` | Git hooks to keep `VERSION` in sync |
+| `scripts/docker-release.sh` | Build and push image to Docker Hub + GHCR (set `DOCKERHUB_IMAGE`, `GHCR_IMAGE`) |
+| `Dockerfile`, `.dockerignore` | Docker image (PHP 8.2 + Apache) |
 | `.htaccess`     | Apache rewrite (if needed); `data/.htaccess` protects the data directory |
 | `css/style.css`, `css/admin.css` | Styles for main page and admin |
 | `CHANGELOG.md`  | Release history |
