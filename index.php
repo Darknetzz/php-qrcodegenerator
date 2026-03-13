@@ -288,6 +288,24 @@ $defaultText = 'https://example.com';
       <a href="admin.php" class="btn btn-secondary admin-link">Admin</a>
       <button type="button" class="btn btn-secondary" id="btn-logout" style="display:none;">Log out</button>
     </div>
+
+    <div id="login-modal" class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" aria-hidden="true">
+      <div class="login-modal-backdrop" id="login-modal-backdrop"></div>
+      <div class="login-modal-dialog">
+        <h2 id="login-modal-title">Log in</h2>
+        <form id="login-form" action="updates.php" method="post" autocomplete="off">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" name="username" autocomplete="username" required>
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+          <div class="login-actions">
+            <button type="submit" class="btn btn-primary">Log in</button>
+            <button type="button" class="btn btn-secondary login-modal-cancel">Cancel</button>
+          </div>
+          <div id="login-form-error" class="login-error" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
   </div>
   </div>
 
@@ -840,34 +858,9 @@ $defaultText = 'https://example.com';
           if (versionEl) versionEl.textContent = 'Version — (login to check)';
           setGateMessage(
             'Access control is enabled. Log in or use an allowed IP to enable <strong>Check for updates</strong> and <strong>custom modules</strong>. ' +
-            '<div class="login-form"><form id="login-form" action="updates.php" method="post" autocomplete="off">' +
-            '<label for="login-username">Username</label><input type="text" id="login-username" name="username" autocomplete="username" required> ' +
-            '<label for="login-password">Password</label><input type="password" id="login-password" name="password" autocomplete="current-password" required> ' +
-            '<div class="login-actions"><button type="submit" class="btn btn-primary">Log in</button></div><div id="login-form-error" class="login-error"></div></form></div>',
+            '<button type="button" class="btn btn-primary" id="btn-open-login-modal">Log in</button>',
             ''
           );
-          var loginForm = document.getElementById('login-form');
-          if (loginForm) {
-            loginForm.addEventListener('submit', function(ev) {
-              ev.preventDefault();
-              var errEl = document.getElementById('login-form-error');
-              if (errEl) errEl.textContent = '';
-              var fd = new FormData(loginForm);
-              fd.append('action', 'login');
-              fetch('updates.php', { method: 'POST', body: fd, credentials: 'include' })
-                .then(function(res) { return res.json().then(function(d) { return { status: res.status, data: d }; }); })
-                .then(function(r) {
-                  if (r.status === 200 && r.data && r.data.success) {
-                    setGatedVisible(true);
-                    setGateMessage('');
-                    applyConfigStatus();
-                  } else {
-                    if (errEl) errEl.textContent = (r.data && r.data.error) || 'Login failed.';
-                  }
-                })
-                .catch(function() { if (errEl) errEl.textContent = 'Login failed.'; });
-            });
-          }
           var activeTab = document.querySelector('.preset-tab.active');
           if (activeTab && (activeTab.getAttribute('data-preset') || '').indexOf('custom-') === 0) {
             var textTab = document.querySelector('.preset-tab[data-preset="text"]');
