@@ -474,17 +474,17 @@ if (!in_array($tab, $validTabs, true)) {
               $mname = isset($m['name']) ? $m['name'] : '';
               $mformat = isset($m['format']) ? $m['format'] : '';
               $micon = isset($m['icon']) ? trim((string) $m['icon']) : '';
-              $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
+              $mlabels = isset($m['fields']) && is_array($m['fields']) ? array_column($m['fields'], 'label') : [];
               $visible = !in_array($mid, $hiddenCustomList, true);
           ?>
-          <li class="admin-module-item">
+          <li class="admin-module-item" data-module-id="<?php echo htmlspecialchars($mid); ?>" data-module-name="<?php echo htmlspecialchars($mname); ?>" data-module-icon="<?php echo htmlspecialchars($micon); ?>" data-module-format="<?php echo htmlspecialchars($mformat); ?>" data-module-labels="<?php echo htmlspecialchars(json_encode($mlabels)); ?>">
             <label class="admin-module-visible">
               <input type="checkbox" name="visible_custom_modules[]" value="<?php echo htmlspecialchars($mid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
               <span class="admin-module-visible-label">Show</span>
             </label>
-            <span class="admin-module-info"><?php $admin_render_icon($micon); ?><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
+            <span class="admin-module-info"><?php $admin_render_icon($micon); ?><strong><?php echo htmlspecialchars($mname); ?></strong></span>
             <span class="admin-module-actions">
-              <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
+              <button type="button" class="admin-module-link admin-module-edit-btn" data-edit-id="<?php echo htmlspecialchars($mid); ?>">Edit</button>
               <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
                 <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
                 <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
@@ -500,24 +500,7 @@ if (!in_array($tab, $validTabs, true)) {
         <?php } else { ?>
         <p class="sub">No custom modules yet. Click <strong>+ Add</strong> to create one.</p>
         <?php } ?>
-        <?php if ($editModule) { ?>
-        <h3 class="admin-module-form-title">Edit module <a href="<?php echo $baseUrl; ?>&amp;tab=modules" class="admin-module-cancel">Cancel</a></h3>
-        <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
-        <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
-          <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
-          <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
-          <input type="hidden" name="module_edit_id" value="<?php echo htmlspecialchars($editModule['id'] ?? ''); ?>">
-          <label for="module_name">Name</label>
-          <input type="text" id="module_name" name="module_name" value="<?php echo htmlspecialchars($editModule['name'] ?? ''); ?>" placeholder="e.g. Phone" required autocomplete="off">
-          <label for="module_icon">Icon (optional)</label>
-          <input type="text" id="module_icon" name="module_icon" value="<?php echo htmlspecialchars($editModule['icon'] ?? ''); ?>" placeholder="&#x1F4DE; or icon-phone" autocomplete="off">
-          <label for="module_format">Format (use %s for each field)</label>
-          <input type="text" id="module_format" name="module_format" value="<?php echo htmlspecialchars($editModule['format'] ?? ''); ?>" placeholder="tel:%s" required autocomplete="off">
-          <label for="module_labels">Field labels (comma-separated)</label>
-          <input type="text" id="module_labels" name="module_labels" value="<?php echo $editModule && !empty($editModule['fields']) ? htmlspecialchars(implode(', ', array_column($editModule['fields'], 'label'))) : ''; ?>" placeholder="e.g. Phone number" autocomplete="off">
-          <button type="submit" class="btn">Update module</button>
-        </form>
-        <?php } elseif ($error !== '' && isset($_POST['module_name'])) { ?>
+        <?php if ($error !== '' && isset($_POST['module_name'])) { ?>
         <p class="msg err"><?php echo htmlspecialchars($error); ?></p>
         <?php } ?>
       </div>
@@ -529,6 +512,7 @@ if (!in_array($tab, $validTabs, true)) {
           <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-modal-form">
             <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
             <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
+            <input type="hidden" name="module_edit_id" id="admin-modal-edit-id" value="">
             <label for="admin_modal_module_name">Name</label>
             <input type="text" id="admin_modal_module_name" name="module_name" placeholder="e.g. Phone" required autocomplete="off">
             <label for="admin_modal_module_icon">Icon (optional — emoji or icon-phone)</label>
@@ -539,22 +523,75 @@ if (!in_array($tab, $validTabs, true)) {
             <input type="text" id="admin_modal_module_labels" name="module_labels" placeholder="e.g. Phone number" autocomplete="off">
             <div class="admin-modal-actions">
               <button type="button" class="btn admin-modal-cancel" id="admin-module-modal-cancel">Cancel</button>
-              <button type="submit" class="btn">Add module</button>
+              <button type="submit" class="btn" id="admin-module-modal-submit">Add module</button>
             </div>
           </form>
         </div>
       </div>
       <script>
         (function() {
-          var btn = document.getElementById('admin-btn-add-module');
+          var addBtn = document.getElementById('admin-btn-add-module');
           var modal = document.getElementById('admin-module-modal');
           var cancel = document.getElementById('admin-module-modal-cancel');
-          if (!btn || !modal) return;
-          function openModal() { modal.removeAttribute('hidden'); }
+          var titleEl = document.getElementById('admin-module-modal-title');
+          var form = document.getElementById('admin-module-modal-form');
+          var editIdInput = document.getElementById('admin-modal-edit-id');
+          var nameInput = document.getElementById('admin_modal_module_name');
+          var iconInput = document.getElementById('admin_modal_module_icon');
+          var formatInput = document.getElementById('admin_modal_module_format');
+          var labelsInput = document.getElementById('admin_modal_module_labels');
+          var submitBtn = document.getElementById('admin-module-modal-submit');
+          if (!modal || !form) return;
+          function openAdd() {
+            if (editIdInput) editIdInput.value = '';
+            if (nameInput) nameInput.value = '';
+            if (iconInput) iconInput.value = '';
+            if (formatInput) formatInput.value = '';
+            if (labelsInput) labelsInput.value = '';
+            if (titleEl) titleEl.textContent = 'Add custom module';
+            if (submitBtn) submitBtn.textContent = 'Add module';
+            modal.removeAttribute('hidden');
+          }
+          function openEdit(row) {
+            var id = row.getAttribute('data-module-id') || '';
+            var name = row.getAttribute('data-module-name') || '';
+            var icon = row.getAttribute('data-module-icon') || '';
+            var format = row.getAttribute('data-module-format') || '';
+            var labelsJson = row.getAttribute('data-module-labels') || '[]';
+            var labels = [];
+            try { labels = JSON.parse(labelsJson); } catch (e) {}
+            if (editIdInput) editIdInput.value = id;
+            if (nameInput) nameInput.value = name;
+            if (iconInput) iconInput.value = icon;
+            if (formatInput) formatInput.value = format;
+            if (labelsInput) labelsInput.value = Array.isArray(labels) ? labels.join(', ') : '';
+            if (titleEl) titleEl.textContent = 'Edit module';
+            if (submitBtn) submitBtn.textContent = 'Update module';
+            modal.removeAttribute('hidden');
+          }
           function closeModal() { modal.setAttribute('hidden', ''); }
-          btn.addEventListener('click', openModal);
-          cancel.addEventListener('click', closeModal);
+          if (addBtn) addBtn.addEventListener('click', openAdd);
+          if (cancel) cancel.addEventListener('click', closeModal);
           modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+          document.querySelectorAll('.admin-module-edit-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var row = btn.closest('.admin-module-item');
+              if (row) openEdit(row);
+            });
+          });
+          var editInUrl = (function() {
+            var m = /[?&]edit=([^&]+)/.exec(window.location.search || '');
+            return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
+          })();
+          if (editInUrl) {
+            var items = document.querySelectorAll('.admin-module-item');
+            for (var i = 0; i < items.length; i++) {
+              if (items[i].getAttribute('data-module-id') === editInUrl) {
+                openEdit(items[i]);
+                break;
+              }
+            }
+          }
         })();
       </script>
 
