@@ -1,6 +1,6 @@
 # QR Code Generator
 
-A self-contained QR code generator that runs on any Apache or Nginx server with PHP and the GD extension. No Composer, no package managers—drop the files and run.
+A self-contained QR code generator that runs on any Apache or Nginx server with PHP and the GD extension. Use a release zip (with `vendor/` included) for copy-and-run; from a git clone, run `composer install` once.
 
 ![QR Code Generator](qrcode.png)
 
@@ -26,12 +26,12 @@ A self-contained QR code generator that runs on any Apache or Nginx server with 
 
 - PHP 8.2+
 - GD extension (for PNG; SVG does not require GD)
-- [Composer](https://getcomposer.org/) (for dependency installation)
+- [Composer](https://getcomposer.org/) only when installing from a git clone (release zips include `vendor/`).
 
 ## Installation
 
 1. Copy the project into your web root (e.g. `htdocs/qr` or `/var/www/html/qr`).
-2. Run `composer install` in the project directory (installs [chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)).
+2. If you cloned from git (and have no `vendor/`), run `composer install` (installs [chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)).
 3. Ensure PHP has the GD extension enabled (default on most LAMP/LEMP stacks).
 4. Open `https://your-server/qr/` (or `index.php`) in a browser.
 
@@ -45,7 +45,7 @@ Example location:
 
 ```nginx
 location /qr {
-    alias /var/www/html/php-qrcodegenerator;
+    alias /var/www/html/qr;
     index index.php;
     location ~ \.php$ {
         include fastcgi_params;
@@ -59,17 +59,22 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 
 ## Files
 
-| File           | Purpose |
-|----------------|--------|
-| `index.php`    | Main page: form, preview, download links |
-| `generate.php` | Endpoint that outputs QR as PNG or SVG |
-| `composer.json`| PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)) |
-| `VERSION`     | App version (first line only; for zip installs; in git, version is computed from `git describe`) |
-| `updates.php`  | Update check (GitHub releases) and upgrade (git pull or release-page link) |
+| File / folder   | Purpose |
+|-----------------|--------|
+| `index.php`     | Main page: form, preview, download links |
+| `generate.php`  | Endpoint that outputs QR as PNG or SVG |
+| `admin.php`     | Admin panel: edit all settings (access with `?key=` your admin or upgrade secret) |
+| `updates.php`   | Update check (GitHub releases) and upgrade (git pull or release-page link) |
 | `load_config.php` | Loads config from SQLite (`data/config.sqlite`); seeds from `config.php` on first run |
-| `admin.php`   | Admin panel: edit all settings in the browser (access with `?key=` your admin or upgrade secret) |
+| `composer.json` | PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)); `vendor/` is committed for copy-and-run |
 | `config.php.sample` | Copy to `config.php` to seed the DB on first load (optional) |
-| `update-version.php` | CLI: writes current git version to VERSION (run before release zip, or from a git hook) |
+| `update-version.php` | CLI: writes current git version to `VERSION` (run before release zip, or from a git hook) |
+| `update-config.sample.php` | Deprecated; config is in SQLite and edited in Admin |
+| `VERSION`       | App version (first line only; for zip installs; in git, version is from `git describe`) |
+| `scripts/post-commit.sample`, `post-checkout.sample`, `post-merge.sample` | Git hooks to keep `VERSION` in sync |
+| `.htaccess`     | Apache rewrite (if needed); `data/.htaccess` protects the data directory |
+| `css/style.css`, `css/admin.css` | Styles for main page and admin |
+| `CHANGELOG.md`  | Release history |
 
 ## Version
 
@@ -89,8 +94,8 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 Settings are stored in **SQLite** (`data/config.sqlite`). On first run, if the DB is empty, values are seeded from **`config.php`** (copy from `config.php.sample`) if that file exists. After that, change everything from the **Admin** panel in the web UI (link at the bottom of the main page).
 
 - Open **Admin** (or `admin.php`). If you have not set a secret yet, the page loads for first-time setup. Set an **admin secret** and/or **upgrade secret**, then save. Next time, use `admin.php?key=<your-secret>` to open the panel.
-- In Admin you can set: **Updates** — GitHub repo (for zip installs). **Authentication** — IP allowlist (comma-separated IPs or CIDR), login (username/password for check and upgrade; session-based form), upgrade secret (required in POST or header for upgrade), admin secret (key to open Admin).
-- Only the update endpoint (`updates.php`) is protected by these settings. The main app (index.php, generate.php, custom modules) is not. To protect the whole site, use your server auth (e.g. Apache `AuthType Basic` for the directory).
+- In Admin you can set: **Updates** — GitHub repo (for zip installs). **Authentication** — IP allowlist (comma-separated IPs or CIDR), login (username/password for check and upgrade; session-based form), upgrade secret (required in POST or header for upgrade), admin secret (key to open Admin), and **Allow app access from any IP** (when unchecked, the IP allowlist applies to the whole app: `index.php`, `generate.php`, and `updates.php`).
+- To protect the whole site with HTTP auth, use your server config (e.g. Apache `AuthType Basic` for the directory).
 
 
 
