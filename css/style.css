@@ -297,12 +297,32 @@ label { display: flex; align-items: center; }
 
 .preset-tab-custom-wrap .preset-tab { flex: 1; }
 
-.preset-tab-custom-del { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0 0.2em; font-size: 1rem; line-height: 1; border-radius: 2px; }
+.preset-tab-custom-edit,
+.preset-tab-custom-del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
 
-.preset-tab-custom-del:hover { color: var(--text); background: var(--border); }
+.preset-tab-custom-edit:hover,
+.preset-tab-custom-del:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
 
-.preset-tab-custom-edit { background: none; border: none; color: var(--muted); cursor: pointer; padding: 0 0.2em; font-size: 0.9rem; line-height: 1; border-radius: 2px; }
-.preset-tab-custom-edit:hover { color: var(--text); background: var(--border); }
+.preset-tab-custom-del:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
 
 .preset-tab-hidden,
 .preset-panel-hidden { display: none !important; }
