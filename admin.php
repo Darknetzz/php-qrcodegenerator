@@ -177,6 +177,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }, $fields)];
         }
     }
+    // Custom module visibility and/or order (from Modules tab form)
+    elseif (isset($_POST['save_custom_modules_visibility']) || (isset($_POST['module_order']) && is_array($_POST['module_order']))) {
+        $updates = [];
+        if (isset($_POST['visible_custom_modules']) && is_array($_POST['visible_custom_modules'])) {
+            $allIds = array_filter(array_map(function ($m) {
+                return isset($m['id']) ? $m['id'] : null;
+            }, $adminModules));
+            $visible = array_values(array_filter(array_map('trim', $_POST['visible_custom_modules'])));
+            $hidden = array_values(array_diff($allIds, $visible));
+            $updates['hidden_custom_modules'] = json_encode($hidden);
+        }
+        if (isset($_POST['module_order']) && is_array($_POST['module_order'])) {
+            $order = array_values(array_filter(array_map('trim', $_POST['module_order'])));
+            $byId = [];
+            foreach ($adminModules as $m) {
+                if (isset($m['id'])) {
+                    $byId[$m['id']] = $m;
+                }
+            }
+            $reordered = [];
+            foreach ($order as $id) {
+                if (isset($byId[$id])) {
+                    $reordered[] = $byId[$id];
+                }
+            }
+            if (count($reordered) === count($adminModules)) {
+                $adminModules = $reordered;
+                $updates['custom_modules'] = json_encode($adminModules);
+            }
+        }
+        if ($updates !== []) {
+            $saveResult = save_config($repoRoot, $updates);
+            if ($saveResult === true) {
+                $config = array_merge($config, $updates);
+                header('Location: ' . $baseUrl . '&tab=modules');
+                exit;
+            }
+            $error = is_string($saveResult) ? $saveResult : 'Could not save.';
+        }
+    }
     $fromPresetsForm = isset($_POST['visible_presets']) && is_array($_POST['visible_presets']) && !isset($_POST['update_repo']);
     $newPass = trim($_POST['update_auth_password'] ?? '');
     $hiddenPresets = $config['hidden_presets'] ?? '[]';
