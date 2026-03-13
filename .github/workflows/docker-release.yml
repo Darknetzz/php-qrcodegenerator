@@ -47,5 +47,5 @@ jobs:
           tags: |
             darknetz/php-qrcodegenerator:${{ steps.version.outputs.version }}
             darknetz/php-qrcodegenerator:v${{ steps.version.outputs.version }}
-            ghcr.io/darknetz/php-qrcodegenerator:${{ steps.version.outputs.version }}
-            ghcr.io/darknetz/php-qrcodegenerator:v${{ steps.version.outputs.version }}
+            ghcr.io/darknetzz/php-qrcodegenerator:${{ steps.version.outputs.version }}
+            ghcr.io/darknetzz/php-qrcodegenerator:v${{ steps.version.outputs.version }}
