@@ -1050,6 +1050,24 @@ $defaultText = 'https://example.com';
     });
   }
 
+  function setVersionHtml(version, versionUrl) {
+    if (!versionEl) return;
+    if (!version) {
+      versionEl.textContent = 'Version —';
+      return;
+    }
+    if (versionUrl) {
+      versionEl.innerHTML = 'Version <a href="' + escapeHtml(versionUrl) + '" target="_blank" rel="noopener noreferrer" class="version-link">' + escapeHtml(version) + '</a>';
+    } else {
+      versionEl.textContent = 'Version ' + version;
+    }
+  }
+  function escapeHtml(s) {
+    var div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
   function loadVersion() {
     fetch('updates.php?action=check', { credentials: 'include' })
       .then(function(r) {
@@ -1060,7 +1078,7 @@ $defaultText = 'https://example.com';
         return r.json();
       })
       .then(function(d) {
-        if (d && d.currentVersion) versionEl.textContent = 'Version ' + d.currentVersion;
+        if (d && d.currentVersion) setVersionHtml(d.currentVersion, d.versionUrl || null);
       })
       .catch(function() { versionEl.textContent = 'Version —'; });
   }
@@ -1092,6 +1110,7 @@ $defaultText = 'https://example.com';
           setMsg(d.error, 'error');
           return;
         }
+        if (d.currentVersion) setVersionHtml(d.currentVersion, d.versionUrl || null);
         if (d.updateAvailable && d.latestVersion) {
           setMsg('Update available: ' + d.latestVersion, 'has-update');
           upgradeBtn.textContent = d.installType === 'zip' ? 'Download latest' : 'Upgrade (git pull)';

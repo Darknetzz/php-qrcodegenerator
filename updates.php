@@ -9,7 +9,7 @@
  * POST ?action=login (username, password) → session login; returns { success } or 401
  * POST ?action=logout → clear session
  * POST ?action=save-initial-config → save first-time setup (only when not yet configured)
- * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType, updateChannel }
+ * GET  ?action=check  → { currentVersion, latestVersion, updateAvailable, releaseUrl, installType, updateChannel, versionUrl }
  * POST ?action=upgrade [&secret=...] → { success, output, error } or { noGit, releaseUrl } for zip
  */
 require_once __DIR__ . '/load_config.php';
@@ -424,6 +424,21 @@ if ($action === 'check') {
         }
     }
 
+    $repoBaseUrl = $github !== null
+        ? ('https://github.com/' . $github[0] . '/' . $github[1])
+        : null;
+    $versionUrl = null;
+    if ($repoBaseUrl !== null) {
+        if ($channel === 'stable') {
+            $versionUrl = $releaseUrl !== null ? $releaseUrl : ($repoBaseUrl . '/releases');
+        } else {
+            $currentRev = $isGit
+                ? trim((string) @shell_exec(sprintf('cd %s && git rev-parse --short HEAD 2>/dev/null', escapeshellarg($repoRoot))))
+                : '';
+            $versionUrl = $currentRev !== '' ? ($repoBaseUrl . '/commit/' . $currentRev) : $repoBaseUrl;
+        }
+    }
+
     json_exit([
         'currentVersion' => $current,
         'latestVersion' => $latestVersion,
@@ -431,6 +446,7 @@ if ($action === 'check') {
         'releaseUrl' => $releaseUrl,
         'installType' => $isGit ? 'git' : 'zip',
         'updateChannel' => $channel,
+        'versionUrl' => $versionUrl,
     ]);
 }
 
