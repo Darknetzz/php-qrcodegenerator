@@ -462,7 +462,7 @@ if (!in_array($tab, $validTabs, true)) {
       <!-- 1. Custom modules: add, edit, delete + visibility -->
       <div class="panel">
         <h2 class="admin-module-heading">1. Custom modules <button type="button" class="admin-btn-add-module" id="admin-btn-add-module" aria-label="Add custom module">+ Add</button></h2>
-        <p class="sub">Add, edit, or remove custom modules. Uncheck <strong>Show</strong> to hide from the tab bar. Each has a name, optional icon (emoji or <code>icon-phone</code>), a format string with <code>%s</code> placeholders, and field labels.</p>
+        <p class="sub">Add, edit, or remove custom modules. Uncheck <strong>Show</strong> to hide from the tab bar. Click <strong>Edit</strong> to view or change name, icon, format, and field labels.</p>
         <?php if (count($adminModules) > 0) { ?>
         <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-custom-modules-form">
           <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
@@ -502,6 +502,17 @@ if (!in_array($tab, $validTabs, true)) {
         <?php } ?>
         <?php if ($error !== '' && isset($_POST['module_name'])) { ?>
         <p class="msg err"><?php echo htmlspecialchars($error); ?></p>
+        <?php } ?>
+        <?php if ($error !== '' && $editModule) {
+            $editModuleJson = json_encode([
+                'id' => $editModule['id'] ?? '',
+                'name' => $editModule['name'] ?? '',
+                'icon' => $editModule['icon'] ?? '',
+                'format' => $editModule['format'] ?? '',
+                'labels' => isset($editModule['fields']) && is_array($editModule['fields']) ? array_column($editModule['fields'], 'label') : [],
+            ]);
+        ?>
+        <script type="application/json" id="admin-module-edit-on-load"><?php echo htmlspecialchars($editModuleJson); ?></script>
         <?php } ?>
       </div>
 
@@ -552,22 +563,31 @@ if (!in_array($tab, $validTabs, true)) {
             if (submitBtn) submitBtn.textContent = 'Add module';
             modal.removeAttribute('hidden');
           }
-          function openEdit(row) {
-            var id = row.getAttribute('data-module-id') || '';
-            var name = row.getAttribute('data-module-name') || '';
-            var icon = row.getAttribute('data-module-icon') || '';
-            var format = row.getAttribute('data-module-format') || '';
-            var labelsJson = row.getAttribute('data-module-labels') || '[]';
-            var labels = [];
-            try { labels = JSON.parse(labelsJson); } catch (e) {}
+          function openEditFromData(data) {
+            var id = (data && data.id) || '';
+            var name = (data && data.name) || '';
+            var icon = (data && data.icon) || '';
+            var format = (data && data.format) || '';
+            var labels = (data && data.labels) && Array.isArray(data.labels) ? data.labels : [];
             if (editIdInput) editIdInput.value = id;
             if (nameInput) nameInput.value = name;
             if (iconInput) iconInput.value = icon;
             if (formatInput) formatInput.value = format;
-            if (labelsInput) labelsInput.value = Array.isArray(labels) ? labels.join(', ') : '';
+            if (labelsInput) labelsInput.value = labels.join(', ');
             if (titleEl) titleEl.textContent = 'Edit module';
             if (submitBtn) submitBtn.textContent = 'Update module';
             modal.removeAttribute('hidden');
+          }
+          function openEdit(row) {
+            var data = {
+              id: row.getAttribute('data-module-id') || '',
+              name: row.getAttribute('data-module-name') || '',
+              icon: row.getAttribute('data-module-icon') || '',
+              format: row.getAttribute('data-module-format') || '',
+              labels: []
+            };
+            try { data.labels = JSON.parse(row.getAttribute('data-module-labels') || '[]'); } catch (e) {}
+            openEditFromData(data);
           }
           function closeModal() { modal.setAttribute('hidden', ''); }
           if (addBtn) addBtn.addEventListener('click', openAdd);
@@ -591,6 +611,13 @@ if (!in_array($tab, $validTabs, true)) {
                 break;
               }
             }
+          }
+          var editOnLoad = document.getElementById('admin-module-edit-on-load');
+          if (editOnLoad && editOnLoad.textContent) {
+            try {
+              openEditFromData(JSON.parse(editOnLoad.textContent));
+              editOnLoad.textContent = '';
+            } catch (e) {}
           }
         })();
       </script>

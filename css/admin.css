@@ -304,6 +304,8 @@ body.admin-tab-auth .admin-save-modules {
   border-radius: 4px;
   cursor: pointer;
   text-decoration: none;
+  margin: 0;
+  font-family: inherit;
 }
 
 .admin-module-delete-form {
