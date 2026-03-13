@@ -335,9 +335,19 @@ body.admin-tab-auth .admin-save-modules {
   opacity: 0.6;
 }
 
+/* Drop indicator: show insertion line between items, not outline on the row */
 .admin-draggable-item.admin-drag-over {
-  outline: 2px solid var(--accent, #22c55e);
-  outline-offset: 2px;
+  outline: none;
+}
+.admin-draggable-item.admin-drag-over::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--accent, #22c55e);
+  border-radius: 2px;
 }
 
 .admin-module-visible {
@@ -427,6 +437,7 @@ body.admin-tab-auth .admin-save-modules {
 }
 
 .admin-module-order-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
