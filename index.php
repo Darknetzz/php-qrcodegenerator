@@ -268,6 +268,7 @@ $defaultText = 'https://example.com';
           <label for="module-labels">Field labels (comma-separated, one per %s)</label>
           <input type="text" id="module-labels" placeholder="e.g. Phone number" autocomplete="off">
           <div class="modal-actions">
+            <button type="button" class="btn btn-danger modal-delete-module" id="btn-delete-module" style="display:none;">Delete</button>
             <button type="button" class="btn btn-secondary" id="btn-cancel-module">Cancel</button>
             <button type="submit" class="btn btn-primary" id="btn-module-submit">Add</button>
           </div>
@@ -473,20 +474,7 @@ $defaultText = 'https://example.com';
           ev.stopPropagation();
           openModuleModalForEdit(m);
         });
-        var delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'preset-tab-custom-del';
-        delBtn.setAttribute('aria-label', 'Remove ' + m.name);
-        delBtn.textContent = '\u00d7';
-        delBtn.addEventListener('click', function(ev) {
-          ev.stopPropagation();
-          var mods = getCustomModules().filter(function(x) { return x.id !== m.id; });
-          setCustomModules(mods);
-          renderCustomModules();
-          if (currentPreset === m.id) setPreset('text');
-        });
         wrap.appendChild(editBtn);
-        wrap.appendChild(delBtn);
       }
       tabsContainer.appendChild(wrap);
       var panel = document.createElement('div');
@@ -704,6 +692,7 @@ $defaultText = 'https://example.com';
     var formatEl = document.getElementById('module-format');
     var labelsEl = document.getElementById('module-labels');
     var submitBtn = document.getElementById('btn-module-submit');
+    var btnDelete = document.getElementById('btn-delete-module');
     if (titleEl) titleEl.textContent = 'Edit custom module';
     if (submitBtn) submitBtn.textContent = 'Save';
     if (editIdEl) editIdEl.value = m.id;
@@ -711,6 +700,7 @@ $defaultText = 'https://example.com';
     if (iconEl) iconEl.value = m.icon || '';
     if (formatEl) formatEl.value = m.format || '';
     if (labelsEl) labelsEl.value = (m.fields || []).map(function(f) { return f.label || ''; }).join(', ');
+    if (btnDelete) { btnDelete.style.display = ''; btnDelete.dataset.editId = m.id; }
     document.getElementById('custom-module-modal').classList.add('visible');
   }
   (function customModuleModal() {
@@ -720,18 +710,37 @@ $defaultText = 'https://example.com';
     var btnCancel = document.getElementById('btn-cancel-module');
     var titleEl = document.getElementById('custom-module-title');
     if (!modal || !addForm || !btnAdd) return;
+    var btnDelete = document.getElementById('btn-delete-module');
     function show() {
       if (titleEl) titleEl.textContent = 'Add custom module';
       var submitBtn = document.getElementById('btn-module-submit');
       if (submitBtn) submitBtn.textContent = 'Add';
       var editIdEl = document.getElementById('module-edit-id');
       if (editIdEl) editIdEl.value = '';
+      if (btnDelete) btnDelete.style.display = 'none';
       addForm.reset();
       modal.classList.add('visible');
     }
-    function hide() { modal.classList.remove('visible'); addForm.reset(); var e = document.getElementById('module-edit-id'); if (e) e.value = ''; }
+    function hide() {
+      modal.classList.remove('visible');
+      addForm.reset();
+      var e = document.getElementById('module-edit-id');
+      if (e) e.value = '';
+      if (btnDelete) btnDelete.style.display = 'none';
+    }
     btnAdd.addEventListener('click', show);
     btnCancel.addEventListener('click', hide);
+    if (btnDelete) {
+      btnDelete.addEventListener('click', function() {
+        var editId = (btnDelete.dataset.editId || (document.getElementById('module-edit-id') && document.getElementById('module-edit-id').value) || '').trim();
+        if (!editId || !confirm('Remove this module?')) return;
+        var mods = getCustomModules().filter(function(x) { return x.id !== editId; });
+        setCustomModules(mods);
+        renderCustomModules();
+        if (currentPreset === editId) setPreset('text');
+        hide();
+      });
+    }
     modal.addEventListener('click', function(e) { if (e.target === modal) hide(); });
     addForm.addEventListener('submit', function(e) {
       e.preventDefault();

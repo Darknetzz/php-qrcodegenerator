@@ -293,35 +293,62 @@ label { display: flex; align-items: center; }
 
 .preset-tab-add { font-size: 1.2rem; padding: 0.25em 0.5em; min-width: 2em; }
 
-.preset-tab-custom-wrap { display: inline-flex; align-items: center; gap: 0.15em; }
-
-.preset-tab-custom-wrap .preset-tab { flex: 1; }
-
-.preset-tab-custom-edit,
-.preset-tab-custom-del {
+.preset-tab-custom-wrap {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.35rem 0.45rem;
-  font-size: 0.9rem;
-  line-height: 1;
+  gap: 0.25rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--muted);
   background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
-.preset-tab-custom-edit:hover,
-.preset-tab-custom-del:hover {
+.preset-tab-custom-wrap:hover {
   color: var(--text);
   border-color: var(--muted);
 }
 
-.preset-tab-custom-del:hover {
-  color: #f87171;
-  border-color: #f87171;
+.preset-tab-custom-wrap .preset-tab {
+  flex: 1;
+  padding: 0;
+  min-width: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
+
+.preset-tab-custom-wrap .preset-tab:hover {
+  color: inherit;
+  border-color: transparent;
+}
+
+.preset-tab-custom-edit {
+  flex-shrink: 0;
+  padding: 0.15rem;
+  margin: -0.15rem 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.preset-tab-custom-edit:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.preset-tab-custom-wrap:has(.preset-tab.active) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .preset-tab-hidden,
@@ -351,7 +378,10 @@ label { display: flex; align-items: center; }
 
 .modal input { width: 100%; margin-top: 0.25rem; box-sizing: border-box; }
 
-.modal-actions { margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end; }
+.modal-actions { margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.modal-delete-module { margin-right: auto; }
+.btn-danger { background: #b91c1c; color: #fff; border: none; }
+.btn-danger:hover { background: #991b1b; color: #fff; }
 
 .checkbox-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
 
