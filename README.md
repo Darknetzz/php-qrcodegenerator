@@ -89,7 +89,7 @@ Or serve the project as the root of a vhost; then `index index.php` and `try_fil
 Settings are stored in **SQLite** (`data/config.sqlite`). On first run, if the DB is empty, values are seeded from **`config.php`** (copy from `config.php.sample`) if that file exists. After that, change everything from the **Admin** panel in the web UI (link at the bottom of the main page).
 
 - Open **Admin** (or `admin.php`). If you have not set a secret yet, the page loads for first-time setup. Set an **admin secret** and/or **upgrade secret**, then save. Next time, use `admin.php?key=<your-secret>` to open the panel.
-- In Admin you can set: **GitHub repo** (for zip installs), **IP allowlist** (comma-separated IPs or CIDR), **login** (username/password for check and upgrade; session-based HTML form, not HTTP Basic Auth), **upgrade secret** (required in POST or header for upgrade), **admin secret** (key to open Admin).
+- In Admin you can set: **Updates** — GitHub repo (for zip installs). **Authentication** — IP allowlist (comma-separated IPs or CIDR), login (username/password for check and upgrade; session-based form), upgrade secret (required in POST or header for upgrade), admin secret (key to open Admin).
 - Only the update endpoint (`updates.php`) is protected by these settings. The main app (index.php, generate.php, custom modules) is not. To protect the whole site, use your server auth (e.g. Apache `AuthType Basic` for the directory).
 
 

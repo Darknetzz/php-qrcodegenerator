@@ -261,9 +261,15 @@ if (!in_array($tab, $validTabs, true)) {
           <label for="update_repo">GitHub repo (owner/repo) — for zip installs</label>
           <input type="text" id="update_repo" name="update_repo" value="<?php echo htmlspecialchars($config['update_repo'] ?? ''); ?>" placeholder="Darknetzz/php-qrcodegenerator">
           <p class="hint">Git clones use .git/config instead.</p>
+        </div>
+      </section>
 
+      <section class="admin-section" id="admin-auth" aria-hidden="<?php echo $tab !== 'auth' ? 'true' : 'false'; ?>">
+        <div class="panel">
+          <h2>Access control</h2>
           <label for="update_ip_allowlist">IP allowlist (comma-separated, optional)</label>
           <input type="text" id="update_ip_allowlist" name="update_ip_allowlist" value="<?php echo htmlspecialchars($config['update_ip_allowlist'] ?? ''); ?>" placeholder="127.0.0.1, 10.0.0.0/24">
+          <p class="hint">Allowed IPs can use the app and updates without logging in. Leave empty if you use login only.</p>
           <div class="checkbox-row">
             <label>
               <input type="checkbox" name="update_allow_app_any_ip" value="1" <?php echo empty($config['update_allow_app_any_ip']) || $config['update_allow_app_any_ip'] === '0' ? '' : 'checked'; ?>>
@@ -271,9 +277,6 @@ if (!in_array($tab, $validTabs, true)) {
             </label>
           </div>
         </div>
-      </section>
-
-      <section class="admin-section" id="admin-auth" aria-hidden="<?php echo $tab !== 'auth' ? 'true' : 'false'; ?>">
         <div class="panel">
           <h2>Update / check login</h2>
           <div class="checkbox-row">

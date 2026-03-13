@@ -58,7 +58,7 @@ $defaultText = 'https://example.com';
       <form id="onboarding-form" class="panel">
         <label for="setup-ip">IP allowlist (comma-separated)</label>
         <input type="text" id="setup-ip" name="update_ip_allowlist" placeholder="127.0.0.1, 10.0.0.0/24" autocomplete="off">
-        <p class="hint">Only these IPs can use updates and custom modules. Leave empty if you use login only.</p>
+        <p class="hint">Allowed IPs can use the app and updates without logging in. Leave empty if you use login only.</p>
         <div class="checkbox-row">
           <label>
             <input type="checkbox" id="setup-allow-app-any-ip" name="update_allow_app_any_ip" value="1" checked>
