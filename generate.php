@@ -6,6 +6,7 @@
  * Uses chillerlan/php-qrcode (https://github.com/chillerlan/php-qrcode).
  */
 require_once __DIR__ . '/load_config.php';
+security_headers();
 require_app_access(realpath(__DIR__));
 require_once __DIR__ . '/vendor/autoload.php';
 

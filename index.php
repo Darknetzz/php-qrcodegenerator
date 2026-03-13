@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/load_config.php';
+security_headers();
 $repoRoot = realpath(__DIR__);
 require_app_access($repoRoot);
 $config = load_config($repoRoot);

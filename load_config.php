@@ -4,6 +4,17 @@
  * Usage: $config = load_config($repoRoot); then $config['update_repo'], etc.
  */
 
+/** Send security-related HTTP headers. Call once per request before any output. */
+function security_headers(): void {
+    if (headers_sent()) {
+        return;
+    }
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+}
+
 /** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
 function ip_in_list(string $ip, string $list): bool {
     $ip = trim($ip);

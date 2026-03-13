@@ -9,6 +9,7 @@ if ($repoRoot === false) {
     exit('Invalid app root');
 }
 require_once $repoRoot . '/load_config.php';
+security_headers();
 $config = load_config($repoRoot);
 
 $adminSecret = trim($config['admin_secret'] ?? '');
