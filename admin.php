@@ -300,6 +300,24 @@ if (!in_array($tab, $validTabs, true)) {
   <link rel="stylesheet" href="css/admin.css">
 </head>
 <body class="admin-tab-<?php echo htmlspecialchars($tab); ?>">
+  <svg xmlns="http://www.w3.org/2000/svg" class="svg-sprite" aria-hidden="true" style="position:absolute;width:0;height:0;">
+    <defs>
+      <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+      <symbol id="icon-wifi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1.5"/></symbol>
+      <symbol id="icon-vcard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/><path d="M8 16h2"/><path d="M14 16h2"/><circle cx="7" cy="7" r="2"/></symbol>
+      <symbol id="icon-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+      <symbol id="icon-email" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></symbol>
+      <symbol id="icon-sms" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="icon-btc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M12 2c-3 0-4 1.5-4 4s1 4 4 4 4-1.5 4-4-1-4-4-4z"/><path d="M12 10c3 0 4 1.5 4 4s-1 4-4 4-4-1.5-4-4 1-4 4-4z"/></symbol>
+      <symbol id="icon-facebook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></symbol>
+      <symbol id="icon-pdf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 12h1"/><path d="M8 16h1"/><path d="M12 12h4"/><path d="M12 16h2"/></symbol>
+      <symbol id="icon-mp3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+      <symbol id="icon-appstore" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+      <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></symbol>
+      <symbol id="icon-custom" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+      <symbol id="icon-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+    </defs>
+  </svg>
   <div class="wrap">
     <h1>Admin — Config</h1>
     <p class="sub">Settings are stored in <code>data/config.sqlite</code>. On first run, values are seeded from <code>config.php</code> if present.</p>
@@ -387,6 +405,22 @@ if (!in_array($tab, $validTabs, true)) {
 
     <section class="admin-section" id="admin-modules" aria-hidden="<?php echo $tab !== 'modules' ? 'true' : 'false'; ?>">
       <?php
+      $presetIconIds = ['url' => 'icon-link', 'wifi' => 'icon-wifi', 'vcard' => 'icon-vcard', 'text' => 'icon-text', 'email' => 'icon-email', 'sms' => 'icon-sms', 'bitcoin' => 'icon-btc', 'facebook' => 'icon-facebook', 'pdf' => 'icon-pdf', 'mp3' => 'icon-mp3', 'appstore' => 'icon-appstore', 'image' => 'icon-image', 'custom' => 'icon-custom'];
+      $admin_render_icon = function ($presetIdOrIcon) use ($presetIconIds) {
+          if (isset($presetIconIds[$presetIdOrIcon])) {
+              echo '<svg class="admin-module-icon" aria-hidden="true"><use href="#' . htmlspecialchars($presetIconIds[$presetIdOrIcon]) . '"/></svg>';
+              return;
+          }
+          $s = trim((string) $presetIdOrIcon);
+          if ($s === '') {
+              return;
+          }
+          if (strpos($s, 'icon-') === 0) {
+              echo '<svg class="admin-module-icon" aria-hidden="true"><use href="#' . htmlspecialchars($s) . '"/></svg>';
+          } else {
+              echo '<span class="admin-module-icon admin-module-icon-emoji" aria-hidden="true">' . htmlspecialchars($s) . '</span>';
+          }
+      };
       $hiddenCustomList = json_decode($config['hidden_custom_modules'] ?? '[]', true);
       if (!is_array($hiddenCustomList)) {
           $hiddenCustomList = [];
@@ -411,6 +445,7 @@ if (!in_array($tab, $validTabs, true)) {
               $mid = isset($m['id']) ? $m['id'] : '';
               $mname = isset($m['name']) ? $m['name'] : '';
               $mformat = isset($m['format']) ? $m['format'] : '';
+              $micon = isset($m['icon']) ? trim((string) $m['icon']) : '';
               $labelsPreview = isset($m['fields']) && is_array($m['fields']) ? implode(', ', array_column($m['fields'], 'label')) : '';
               $visible = !in_array($mid, $hiddenCustomList, true);
           ?>
@@ -419,7 +454,7 @@ if (!in_array($tab, $validTabs, true)) {
               <input type="checkbox" name="visible_custom_modules[]" value="<?php echo htmlspecialchars($mid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
               <span class="admin-module-visible-label">Show</span>
             </label>
-            <span class="admin-module-info"><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
+            <span class="admin-module-info"><?php $admin_render_icon($micon); ?><strong><?php echo htmlspecialchars($mname); ?></strong> — <code><?php echo htmlspecialchars($mformat); ?></code><?php if ($labelsPreview !== '') { ?> (<?php echo htmlspecialchars($labelsPreview); ?>)<?php } ?></span>
             <span class="admin-module-actions">
               <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
               <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
@@ -511,7 +546,7 @@ if (!in_array($tab, $validTabs, true)) {
             <li class="admin-preset-visibility-item">
               <label class="admin-preset-checkbox">
                 <input type="checkbox" name="visible_presets[]" value="<?php echo htmlspecialchars($pid); ?>"<?php echo $visible ? ' checked' : ''; ?>>
-                <?php echo htmlspecialchars($label); ?>
+                <?php $admin_render_icon($pid); ?><?php echo htmlspecialchars($label); ?>
               </label>
             </li>
           <?php } ?>
@@ -539,11 +574,12 @@ if (!in_array($tab, $validTabs, true)) {
           foreach ($fullOrder as $oid) {
               $isDefault = in_array($oid, $defaultPresetIds, true);
               $label = $isDefault ? ($defaultPresetLabels[$oid] ?? $oid) : (isset($customById[$oid]) ? $customById[$oid]['name'] : $oid);
+              $orderIcon = $isDefault ? $oid : (isset($customById[$oid]['icon']) ? trim((string) $customById[$oid]['icon']) : '');
           ?>
             <li class="admin-module-order-item admin-draggable-item" data-module-id="<?php echo htmlspecialchars($oid); ?>" draggable="true">
               <span class="admin-drag-handle" aria-label="Drag to reorder">⋮⋮</span>
               <input type="hidden" name="full_order[]" value="<?php echo htmlspecialchars($oid); ?>">
-              <span class="admin-module-order-label"><?php echo htmlspecialchars($label); ?><?php if (!$isDefault) { ?> <em>(custom)</em><?php } ?></span>
+              <span class="admin-module-order-label"><?php $admin_render_icon($orderIcon); ?><?php echo htmlspecialchars($label); ?><?php if (!$isDefault) { ?> <em>(custom)</em><?php } ?></span>
             </li>
           <?php } ?>
           </ul>
