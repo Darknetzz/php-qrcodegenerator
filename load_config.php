@@ -15,6 +15,27 @@ function security_headers(): void {
     header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
 }
 
+/** Generate a CSRF token and store in session. Start session if needed. Returns token. */
+function csrf_token(string $name = 'csrf_token'): string {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+    }
+    if (empty($_SESSION[$name])) {
+        $_SESSION[$name] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION[$name];
+}
+
+/** Verify CSRF token from request. Returns true if valid. */
+function csrf_verify(string $name = 'csrf_token'): bool {
+    if (session_status() === PHP_SESSION_NONE) {
+        return false;
+    }
+    $token = $_SESSION[$name] ?? '';
+    $given = trim((string) ($_POST[$name] ?? ''));
+    return $token !== '' && $given !== '' && hash_equals($token, $given);
+}
+
 /** Check if IP matches a CIDR or exact address (e.g. "10.0.0.0/24" or "127.0.0.1") */
 function ip_in_list(string $ip, string $list): bool {
     $ip = trim($ip);

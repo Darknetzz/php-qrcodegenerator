@@ -107,6 +107,9 @@ if (isset($_GET['edit']) && is_string($_GET['edit']) && $_GET['edit'] !== '') {
 $saved = false;
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify('admin_csrf')) {
+        $error = 'Invalid security token. Please try again.';
+    } else {
     // Module delete
     if (isset($_POST['delete_module_id']) && is_string($_POST['delete_module_id']) && $_POST['delete_module_id'] !== '') {
         $toDelete = $_POST['delete_module_id'];
@@ -260,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $error = is_string($saveResult) ? $saveResult : 'Could not save (check data/ is writable).';
     }
+    }
 }
 
 $pageTitle = 'Admin — Config';
@@ -294,6 +298,7 @@ if (!in_array($tab, $validTabs, true)) {
 
     <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=' . $tab); ?>">
       <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+      <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
       <input type="hidden" name="tab" value="<?php echo htmlspecialchars($tab); ?>">
 
       <section class="admin-section" id="admin-updates" aria-hidden="<?php echo $tab !== 'updates' ? 'true' : 'false'; ?>">
@@ -365,6 +370,7 @@ if (!in_array($tab, $validTabs, true)) {
         if (count($adminModules) > 0) { ?>
         <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-custom-modules-form">
           <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+          <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
           <input type="hidden" name="save_custom_modules_visibility" value="1">
           <ul class="admin-module-list admin-draggable-list" id="admin-module-list" aria-label="Custom modules order">
           <?php foreach ($adminModules as $idx => $m) {
@@ -386,6 +392,7 @@ if (!in_array($tab, $validTabs, true)) {
               <a href="<?php echo $baseUrl; ?>&amp;tab=modules&amp;edit=<?php echo rawurlencode($mid); ?>" class="admin-module-link">Edit</a>
               <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-delete-form" onsubmit="return confirm('Remove this module?');">
                 <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+                <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
                 <input type="hidden" name="delete_module_id" value="<?php echo htmlspecialchars($mid); ?>">
                 <button type="submit" class="admin-module-delete">Delete</button>
               </form>
@@ -403,6 +410,7 @@ if (!in_array($tab, $validTabs, true)) {
         <?php if ($error !== '' && isset($_POST['module_name'])) { echo '<p class="msg err">' . htmlspecialchars($error) . '</p>'; } ?>
         <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" class="admin-module-form">
           <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+          <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
           <input type="hidden" name="module_edit_id" value="<?php echo htmlspecialchars($editModule['id'] ?? ''); ?>">
           <label for="module_name">Name</label>
           <input type="text" id="module_name" name="module_name" value="<?php echo htmlspecialchars($editModule['name'] ?? ''); ?>" placeholder="e.g. Phone" required autocomplete="off">
@@ -425,6 +433,7 @@ if (!in_array($tab, $validTabs, true)) {
           <p class="sub">Use <code>%s</code> in the format for each field (e.g. <code>tel:%s</code>).</p>
           <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>" id="admin-module-modal-form">
             <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+            <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
             <label for="admin_modal_module_name">Name</label>
             <input type="text" id="admin_modal_module_name" name="module_name" placeholder="e.g. Phone" required autocomplete="off">
             <label for="admin_modal_module_icon">Icon (optional — emoji or icon-phone)</label>
@@ -508,6 +517,7 @@ if (!in_array($tab, $validTabs, true)) {
       </script>
       <form method="post" action="<?php echo htmlspecialchars($baseUrl . '&tab=modules'); ?>">
         <input type="hidden" name="key" value="<?php echo htmlspecialchars($key); ?>">
+        <input type="hidden" name="admin_csrf" value="<?php echo htmlspecialchars(csrf_token('admin_csrf')); ?>">
         <input type="hidden" name="tab" value="modules">
         <div class="panel">
           <h2>Default preset tabs</h2>
