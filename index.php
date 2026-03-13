@@ -884,6 +884,7 @@ $defaultText = 'https://example.com';
           showApp();
           if (btnLogout) btnLogout.style.display = (d.loggedIn ? '' : 'none');
         } else {
+          window.__setupCsrfToken = (d && d.setupToken) ? d.setupToken : '';
           showOnboarding();
           if (btnLogout) btnLogout.style.display = 'none';
         }
@@ -926,6 +927,7 @@ $defaultText = 'https://example.com';
       }
       var formData = new FormData(onboardingForm);
       formData.append('action', 'save-initial-config');
+      if (window.__setupCsrfToken) formData.append('setup_csrf', window.__setupCsrfToken);
       fetch('updates.php', { method: 'POST', body: formData, credentials: 'include' })
         .then(function(r) { return r.json().then(function(d) { return { status: r.status, data: d }; }); })
         .then(function(res) {

@@ -127,12 +127,19 @@ if ($action === 'config-status') {
     }
     $configured = is_access_configured($config);
     $loggedIn = !empty($_SESSION['qr_authenticated']);
-    json_exit(['configured' => $configured, 'loggedIn' => $loggedIn]);
+    $out = ['configured' => $configured, 'loggedIn' => $loggedIn];
+    if (!$configured) {
+        $out['setupToken'] = csrf_token('setup_csrf');
+    }
+    json_exit($out);
 }
 
 if ($action === 'save-initial-config') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         json_exit(['error' => 'Use POST'], 405);
+    }
+    if (!csrf_verify('setup_csrf')) {
+        json_exit(['error' => 'Invalid security token. Reload the page and try again.'], 403);
     }
     if (is_access_configured($config)) {
         json_exit(['error' => 'Already configured'], 400);
