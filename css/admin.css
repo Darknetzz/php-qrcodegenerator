@@ -226,15 +226,9 @@ body.admin-tab-auth .admin-save-modules {
   gap: 0.5rem;
 }
 
-.admin-module-link {
-  font-size: 0.875rem;
-}
-
-.admin-module-delete-form {
-  display: inline;
-}
-
+.admin-module-link,
 .admin-module-delete {
+  display: inline-block;
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
   background: transparent;
@@ -242,6 +236,16 @@ body.admin-tab-auth .admin-save-modules {
   border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-module-delete-form {
+  display: inline;
+}
+
+.admin-module-link:hover {
+  color: var(--fg);
+  border-color: var(--border);
 }
 
 .admin-module-delete:hover {
