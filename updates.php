@@ -331,6 +331,44 @@ function upgrade_allowed(array $config): bool {
     return $given !== '' && hash_equals($secret, $given);
 }
 
+/** Get default branch (e.g. main) from origin. */
+function get_default_branch(string $repoRoot): string {
+    $head = $repoRoot . '/.git/refs/remotes/origin/HEAD';
+    if (is_readable($head)) {
+        $content = @file_get_contents($head);
+        if ($content !== false && preg_match('#ref: refs/remotes/origin/(.+)#', trim($content), $m)) {
+            $b = trim($m[1]);
+            if ($b !== '') {
+                return $b;
+            }
+        }
+    }
+    return 'main';
+}
+
+/**
+ * For dev channel: fetch origin and return [version_describe, commit_short] of origin/<branch>.
+ * Returns null if fetch or describe fails.
+ */
+function get_dev_latest(string $repoRoot, string $branch): ?array {
+    $escRoot = escapeshellarg($repoRoot);
+    $escBranch = escapeshellarg($branch);
+    @shell_exec("cd {$escRoot} && git fetch origin 2>/dev/null");
+    $cmd = "cd {$escRoot} && git describe --tags --always origin/{$escBranch} 2>/dev/null";
+    $out = @shell_exec($cmd);
+    if ($out === null) {
+        return null;
+    }
+    $describe = trim($out);
+    if ($describe === '') {
+        return null;
+    }
+    $cmd2 = "cd {$escRoot} && git rev-parse --short origin/{$escBranch} 2>/dev/null";
+    $out2 = @shell_exec($cmd2);
+    $short = ($out2 !== null && trim($out2) !== '') ? trim($out2) : null;
+    return [$describe, $short];
+}
+
 /** Resolve [owner, repo] for GitHub API: from git config or from update_repo (e.g. zip install) */
 function resolve_repo(string $repoRoot, bool $isGit, array $config): ?array {
     if ($isGit) {
@@ -349,12 +387,32 @@ function resolve_repo(string $repoRoot, bool $isGit, array $config): ?array {
 
 if ($action === 'check') {
     $current = get_local_version($repoRoot, $isGit);
-    $github = resolve_repo($repoRoot, $isGit, $config);
+    $channel = trim($config['update_channel'] ?? 'stable');
+    if ($channel !== 'stable' && $channel !== 'dev') {
+        $channel = 'stable';
+    }
     $latestVersion = null;
     $releaseUrl = null;
     $updateAvailable = false;
 
-    if ($github !== null) {
+    if ($channel === 'dev' && $isGit) {
+        $branch = get_default_branch($repoRoot);
+        $devLatest = get_dev_latest($repoRoot, $branch);
+        if ($devLatest !== null) {
+            [$latestVersion] = $devLatest;
+            $releaseUrl = null;
+            $currentRev = @shell_exec(sprintf(
+                'cd %s && git rev-parse --short HEAD 2>/dev/null',
+                escapeshellarg($repoRoot)
+            ));
+            $originRev = $devLatest[1] ?? null;
+            if ($currentRev !== null && $originRev !== null) {
+                $updateAvailable = trim($currentRev) !== trim($originRev);
+            } else {
+                $updateAvailable = $current !== $latestVersion;
+            }
+        }
+    } elseif ($github = resolve_repo($repoRoot, $isGit, $config)) {
         [$owner, $repo] = $github;
         $release = get_latest_release($owner, $repo);
         if ($release !== null) {
@@ -369,6 +427,7 @@ if ($action === 'check') {
         'updateAvailable' => $updateAvailable,
         'releaseUrl' => $releaseUrl,
         'installType' => $isGit ? 'git' : 'zip',
+        'updateChannel' => $channel,
     ]);
 }
 

@@ -261,8 +261,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $error = is_string($saveResult) ? $saveResult : 'Could not save.';
     } else {
+        $channel = trim($_POST['update_channel'] ?? 'stable');
+        if ($channel !== 'stable' && $channel !== 'dev') {
+            $channel = 'stable';
+        }
         $updates = [
             'update_repo' => trim($_POST['update_repo'] ?? ''),
+            'update_channel' => $channel,
             'update_ip_allowlist' => trim($_POST['update_ip_allowlist'] ?? ''),
             'update_allow_app_any_ip' => !empty($_POST['update_allow_app_any_ip']) ? '1' : '0',
             'update_use_basic_auth' => !empty($_POST['update_use_basic_auth']) ? '1' : '0',
@@ -352,6 +357,21 @@ if (!in_array($tab, $validTabs, true)) {
           <label for="update_repo">GitHub repo (owner/repo) — for zip installs</label>
           <input type="text" id="update_repo" name="update_repo" value="<?php echo htmlspecialchars($config['update_repo'] ?? ''); ?>" placeholder="Darknetzz/php-qrcodegenerator">
           <p class="hint">Git clones use .git/config instead.</p>
+          <fieldset class="admin-fieldset">
+            <legend>Update channel (git clones only)</legend>
+            <div class="checkbox-row">
+              <label>
+                <input type="radio" name="update_channel" value="stable" <?php echo ($config['update_channel'] ?? 'stable') === 'stable' ? 'checked' : ''; ?>>
+                Stable — follow releases/tags (recommended)
+              </label>
+            </div>
+            <div class="checkbox-row">
+              <label>
+                <input type="radio" name="update_channel" value="dev" <?php echo ($config['update_channel'] ?? '') === 'dev' ? 'checked' : ''; ?>>
+                Dev — latest commit on default branch
+              </label>
+            </div>
+          </fieldset>
         </div>
       </section>
 
