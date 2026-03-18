@@ -106,7 +106,10 @@ $defaultText = 'https://example.com';
   </div>
   <div id="app-content" class="hidden">
   <div class="wrap">
-    <h1><?php echo htmlspecialchars($title); ?></h1>
+    <h1>
+      <img src="logo.svg" alt="" width="32" height="32" style="vertical-align:middle;margin-right:0.5rem;">
+      <?php echo htmlspecialchars($title); ?>
+    </h1>
     <p class="tagline">Create QR codes for URLs, text, or any content. No sign-up, no tracking.</p>
 
     <div class="grid">
