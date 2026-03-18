@@ -36,6 +36,7 @@ $defaultText = 'https://example.com';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo htmlspecialchars($title); ?></title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
