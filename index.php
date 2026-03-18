@@ -707,6 +707,20 @@ $defaultText = 'https://example.com';
     dlSvg.href = buildUrl('svg', true);
   }
 
+  function preventDownloadWhenEmpty(e, linkEl) {
+    // If href is empty or just a hash, treat as disabled
+    if (!linkEl || !linkEl.getAttribute('href') || linkEl.getAttribute('href') === '#') {
+      e.preventDefault();
+    }
+  }
+
+  if (dlPng) {
+    dlPng.addEventListener('click', function(e) { preventDownloadWhenEmpty(e, dlPng); });
+  }
+  if (dlSvg) {
+    dlSvg.addEventListener('click', function(e) { preventDownloadWhenEmpty(e, dlSvg); });
+  }
+
   var presetInputs = [
     'url', 'wifi-ssid', 'wifi-password', 'wifi-encryption', 'wifi-hidden',
     'vcard-name', 'vcard-org', 'vcard-tel', 'vcard-email',
