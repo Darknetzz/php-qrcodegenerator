@@ -1,5 +1,7 @@
 # QR Code Generator
 
+<p align="center"><img src="docs/images/banner-gradient.png" alt="php-qrcodegenerator" width="720"></p>
+
 A self-contained QR code generator that runs on any Apache or Nginx server with PHP and the GD extension. It uses Composer for PHP dependencies ([chillerlan/php-qrcode](https://github.com/chillerlan/php-qrcode)); run `composer install` when cloning from git, or use a release zip that includes `vendor/` for copy-and-run.
 
 <p align="center">
